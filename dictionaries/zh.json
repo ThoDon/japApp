@@ -1,4 +1,6 @@
 {
+  "appDescription": "为平假名、片假名和汉字生成日语练习。",
+  "appName": "日语练习生成器",
   "characterCount": "字符计数",
   "clearHistory": "清除全部",
   "comingSoon": "敬请期待...",

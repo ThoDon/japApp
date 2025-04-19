@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../globals.css";
 import { Locale, i18n } from "../../i18nConfig";
+import { getDictionary } from "./dictionaries";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,10 +12,18 @@ export async function generateStaticParams() {
   return i18n.locales.map((locale) => ({ lang: locale }));
 }
 
-export const metadata: Metadata = {
-  title: "Jap'App - Exercices de japonais",
-  description: "Application de génération d'exercices de japonais",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: { lang: Locale };
+}): Promise<Metadata> {
+  const dictionary = await getDictionary(params.lang);
+
+  return {
+    title: `Jap'App - ${dictionary.appName}`,
+    description: dictionary.appDescription,
+  };
+}
 
 export default async function RootLayout({
   children,

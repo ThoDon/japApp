@@ -1,4 +1,6 @@
 {
+  "appName": "Generatore di esercizi giapponesi",
+  "appDescription": "Genera esercizi giapponesi per Hiragana, Katakana e Kanji.",
   "characterCount": "Conteggio caratteri",
   "clearHistory": "Cancella tutto",
   "comingSoon": "Prossimamente...",
