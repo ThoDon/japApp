@@ -1,4 +1,3 @@
-// Hiragana characters with their romaji equivalents
 const hiragana = [
   { char: "あ", romaji: "a" },
   { char: "い", romaji: "i" },
@@ -129,23 +128,14 @@ export function generateGrid(type: string, count: number): { char: string; romaj
       characterSet = hiragana
   }
 
-  // Ensure all characters are included at least once if count is large enough
-  if (count >= characterSet.length) {
-    // Start with all characters
-    const result = [...characterSet]
+  // For large counts, we need to repeat characters
+  const repeats = Math.ceil(count / characterSet.length)
+  let allChars: { char: string; romaji: string }[] = []
 
-    // If we need more, add random ones until we reach the count
-    if (count > characterSet.length) {
-      const extras = count - characterSet.length
-      const shuffled = shuffleArray(characterSet)
-      result.push(...shuffled.slice(0, extras))
-    }
-
-    // Shuffle the final result
-    return shuffleArray(result)
-  } else {
-    // If count is less than the total characters, just shuffle and take the first 'count'
-    const shuffled = shuffleArray(characterSet)
-    return shuffled.slice(0, count)
+  for (let i = 0; i < repeats; i++) {
+    allChars = [...allChars, ...shuffleArray(characterSet)]
   }
+
+  // Take exactly the number of characters needed
+  return allChars.slice(0, count)
 }

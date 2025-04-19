@@ -11,9 +11,8 @@ interface HistoryItemProps {
   exercise: {
     id: string
     type: string
-    size: string
     direction?: "syllabaryToRomaji" | "romajiToSyllabary"
-    characterCount?: number
+    pageFormat?: "halfPage" | "fullPage"
     grid: { char: string; romaji: string }[]
     timestamp: number
   }
@@ -45,7 +44,7 @@ export function HistoryItem({ exercise, onLoad, onDelete, t }: HistoryItemProps)
       <CardContent className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="font-medium capitalize">{exercise.type}</h3>
-          <span className="text-sm text-muted-foreground">{t(exercise.size)}</span>
+          <span className="text-sm text-muted-foreground">{t(exercise.pageFormat || "halfPage")}</span>
         </div>
 
         <div className="grid grid-cols-4 gap-2">

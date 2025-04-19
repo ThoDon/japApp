@@ -9,7 +9,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Jap'App - Exercices de japonais",
   description: "Application de génération d'exercices de japonais",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({

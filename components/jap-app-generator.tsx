@@ -1,45 +1,53 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Printer, RefreshCw, Clock, AlertCircle } from "lucide-react"
+import { Printer, RefreshCw, Clock, AlertCircle, Bug } from "lucide-react"
 import { generateGrid } from "@/lib/japanese-utils"
-import { printDocument } from "@/lib/print-utils"
+import { printDocument, debugPrintDocument } from "@/lib/print-utils"
 import { ExerciseGrid } from "@/components/exercise-grid"
 import { HistoryItem } from "@/components/history-item"
 import { useTranslations } from "@/hooks/use-translations"
 
 type SyllabaryType = "hiragana" | "katakana" | "kanji"
-type SizeType = "small" | "normal" | "large"
 type DirectionType = "syllabaryToRomaji" | "romajiToSyllabary"
+type PageFormatType = "halfPage" | "fullPage"
 
 interface Exercise {
   id: string
   type: SyllabaryType
-  size: SizeType
   direction: DirectionType
-  characterCount: number
+  pageFormat: PageFormatType
   grid: { char: string; romaji: string }[]
   timestamp: number
 }
+
+// Calculate the number of characters per page based on the page format
+const getCharactersPerPage = (format: PageFormatType): number => {
+  return format === "halfPage" ? 72 : 144 // 12x6 for half page, 12x12 for full page
+}
+
+// Check if we're in development mode
+const isDevelopment = process.env.NODE_ENV === "development"
 
 export function JapAppGenerator() {
   const { t } = useTranslations()
 
   const [syllabaryType, setSyllabaryType] = useState<SyllabaryType>("hiragana")
-  const [characterSize, setCharacterSize] = useState<SizeType>("normal")
-  const [gridCount, setGridCount] = useState<number>(1)
+  const [pageCount, setPageCount] = useState<number>(1)
   const [showCorrection, setShowCorrection] = useState<boolean>(true)
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [history, setHistory] = useState<Exercise[]>([])
   const [direction, setDirection] = useState<DirectionType>("syllabaryToRomaji")
-  const [characterCount, setCharacterCount] = useState<number>(20)
+  const [pageFormat, setPageFormat] = useState<PageFormatType>("halfPage")
 
   // Load history from localStorage on component mount
   useEffect(() => {
@@ -62,16 +70,45 @@ export function JapAppGenerator() {
     }
   }, [history])
 
+  // Generate new exercises when parameters change
+  useEffect(() => {
+    if (exercises.length > 0) {
+      generateExercises()
+    }
+  }, [syllabaryType, direction, pageFormat]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePageCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number.parseInt(e.target.value)
+    if (!isNaN(value) && value > 0) {
+      setPageCount(value)
+    } else {
+      setPageCount(1)
+    }
+  }
+
   const generateExercises = () => {
-    const newExercises = Array.from({ length: gridCount }, (_, i) => ({
-      id: `${Date.now()}-${i}`,
-      type: syllabaryType,
-      size: characterSize,
-      direction,
-      characterCount,
-      grid: generateGrid(syllabaryType, characterCount),
-      timestamp: Date.now(),
-    }))
+    const charactersPerPage = getCharactersPerPage(pageFormat)
+
+    const newExercises = Array.from({ length: pageCount }, (_, i) => {
+      // Generate enough characters for the page format
+      // For full page, we need to ensure we have 144 characters
+      const grid = generateGrid(syllabaryType, charactersPerPage)
+
+      // Ensure we have enough characters (in case generateGrid doesn't return enough)
+      while (grid.length < charactersPerPage) {
+        const moreChars = generateGrid(syllabaryType, charactersPerPage - grid.length)
+        grid.push(...moreChars)
+      }
+
+      return {
+        id: `${Date.now()}-${i}`,
+        type: syllabaryType,
+        direction,
+        pageFormat,
+        grid,
+        timestamp: Date.now(),
+      }
+    })
 
     setExercises(newExercises)
 
@@ -83,7 +120,11 @@ export function JapAppGenerator() {
   }
 
   const handlePrint = () => {
-    printDocument(exercises, showCorrection, characterSize, direction)
+    printDocument(exercises, showCorrection, direction, pageFormat)
+  }
+
+  const handleDebugPrint = () => {
+    debugPrintDocument(exercises, showCorrection, direction, pageFormat)
   }
 
   const clearHistory = () => {
@@ -100,10 +141,9 @@ export function JapAppGenerator() {
   const loadFromHistory = (exercise: Exercise) => {
     setExercises([exercise])
     setSyllabaryType(exercise.type)
-    setCharacterSize(exercise.size)
     setDirection(exercise.direction || "syllabaryToRomaji")
-    setCharacterCount(exercise.characterCount || 20)
-    setGridCount(1)
+    setPageFormat(exercise.pageFormat || "halfPage")
+    setPageCount(1)
   }
 
   return (
@@ -123,19 +163,23 @@ export function JapAppGenerator() {
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="hiragana">{t("hiragana")}</TabsTrigger>
                     <TabsTrigger value="katakana">{t("katakana")}</TabsTrigger>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <TabsTrigger value="kanji" disabled className="flex items-center gap-1">
-                            {t("kanji")}
-                            <AlertCircle className="h-4 w-4" />
-                          </TabsTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{t("comingSoon")}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="relative">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <TabsTrigger value="kanji" disabled className="flex w-full items-center gap-1">
+                                {t("kanji")}
+                                <AlertCircle className="h-4 w-4" />
+                              </TabsTrigger>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t("comingSoon")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </TabsList>
                 </Tabs>
               </div>
@@ -156,52 +200,30 @@ export function JapAppGenerator() {
               </div>
 
               <div>
-                <Label htmlFor="character-count">{t("characterCount")}</Label>
-                <Select
-                  value={characterCount.toString()}
-                  onValueChange={(value) => setCharacterCount(Number.parseInt(value))}
+                <Label>{t("pageFormat")}</Label>
+                <Tabs
+                  defaultValue="halfPage"
+                  value={pageFormat}
+                  onValueChange={(value) => setPageFormat(value as PageFormatType)}
+                  className="mt-2"
                 >
-                  <SelectTrigger id="character-count" className="mt-2">
-                    <SelectValue placeholder={t("selectCharacterCount")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[10, 20, 50, 80, 100, 150, 200].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="halfPage">{t("halfPage")}</TabsTrigger>
+                    <TabsTrigger value="fullPage">{t("fullPage")}</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
 
               <div>
-                <Label htmlFor="grid-count">{t("numberOfGrids")}</Label>
-                <Select value={gridCount.toString()} onValueChange={(value) => setGridCount(Number.parseInt(value))}>
-                  <SelectTrigger id="grid-count" className="mt-2">
-                    <SelectValue placeholder={t("selectGridCount")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="character-size">{t("characterSize")}</Label>
-                <Select value={characterSize} onValueChange={(value) => setCharacterSize(value as SizeType)}>
-                  <SelectTrigger id="character-size" className="mt-2">
-                    <SelectValue placeholder={t("selectSize")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="small">{t("small")}</SelectItem>
-                    <SelectItem value="normal">{t("normal")}</SelectItem>
-                    <SelectItem value="large">{t("large")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="page-count">{t("numberOfPages")}</Label>
+                <Input
+                  id="page-count"
+                  type="number"
+                  min="1"
+                  value={pageCount}
+                  onChange={handlePageCountChange}
+                  className="mt-2"
+                />
               </div>
 
               <div className="flex items-center space-x-2">
@@ -220,6 +242,7 @@ export function JapAppGenerator() {
                       showCorrection={showCorrection}
                       isPreview={true}
                       direction={direction}
+                      pageFormat={pageFormat}
                     />
                   </div>
                 ) : (
@@ -235,10 +258,24 @@ export function JapAppGenerator() {
                   {exercises.length > 0 ? t("regenerate") : t("generate")}
                 </Button>
 
-                <Button onClick={handlePrint} variant="outline" disabled={exercises.length === 0} className="w-full">
-                  <Printer className="mr-2 h-4 w-4" />
-                  {t("print")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={handlePrint} variant="outline" disabled={exercises.length === 0} className="flex-1">
+                    <Printer className="mr-2 h-4 w-4" />
+                    {t("print")}
+                  </Button>
+
+                  {isDevelopment && (
+                    <Button
+                      onClick={handleDebugPrint}
+                      variant="outline"
+                      disabled={exercises.length === 0}
+                      className="w-10 px-0"
+                      title="Debug Print"
+                    >
+                      <Bug className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
