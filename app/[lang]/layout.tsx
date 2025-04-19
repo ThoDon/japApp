@@ -17,7 +17,7 @@ export async function generateMetadata({
 }: {
   params: { lang: Locale };
 }): Promise<Metadata> {
-  const dictionary = await getDictionary(params.lang);
+  const dictionary = await getDictionary((await params).lang);
 
   return {
     title: `Jap'App - ${dictionary.appName}`,
