@@ -3,11 +3,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../globals.css";
+import { Locale, i18n } from "../../i18nConfig";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateStaticParams() {
-  return [{ lang: "en-US" }, { lang: "fr-FR" }];
+  return i18n.locales.map((locale) => ({ lang: locale }));
 }
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ lang: "fr-FR" | "en-US" }>;
+  params: Promise<{ lang: Locale }>;
 }) {
   return (
     <html lang={(await params).lang} suppressHydrationWarning>
