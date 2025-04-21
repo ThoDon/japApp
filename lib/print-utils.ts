@@ -16,12 +16,12 @@ export async function printDocument(
   container.innerHTML = generateHtmlContent(exercises, showCorrection, d);
 
   const opt = {
-    margin: 0.2,
+    margin: 0.5,
     filename: `japapp-exercises.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    jsPDF: { unit: "cm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css"] },
   };
 
   await html2pdf().set(opt).from(container).save();
@@ -43,7 +43,7 @@ function generateHtmlContent(
   showCorrection: boolean,
   d: Record<string, string>
 ): string {
-  const columns = 16;
+  const columns = 14;
   const style = getPrintStyles(columns, exercises[0].direction);
 
   let html = `${style}<div class="print-container">`;
@@ -57,8 +57,6 @@ function generateHtmlContent(
 
     const pageLabel = exercises.length > 1 ? ` ${index + 1}` : "";
 
-    if (index > 0) html += `<div class="page-break"></div>`;
-
     html += renderHeader(`${d.exercise}${pageLabel} -  ${directionLabel}`);
     html += `<div class="exercise-section no-break"><div class="exercise-grid">`;
     html += renderGrid(grid, direction, false);
@@ -66,7 +64,6 @@ function generateHtmlContent(
 
     if (showCorrection) {
       if (pageFormat === "fullPage") {
-        html += `<div class="page-break"></div>`;
         html += renderHeader(
           `${d.correction}${pageLabel} -  ${directionLabel}`
         );
@@ -100,12 +97,14 @@ function renderGrid(
   let output = "";
   for (let i = 0; i < grid.length; i++) {
     const item = i < grid.length ? grid[i] : grid[grid.length - 1];
-    const main = direction === "syllabaryToRomaji" ? item.char : item.romaji;
-    const correction =
-      direction === "syllabaryToRomaji" ? item.romaji : item.char;
+
+    const syllabaryToRomaji = direction === "syllabaryToRomaji";
+
+    const main = syllabaryToRomaji ? item.char : item.romaji;
+    const correction = syllabaryToRomaji ? item.romaji : item.char;
 
     output += `
-      <div class="character-cell">
+      <div class="character-cell ${syllabaryToRomaji ? "font-jp" : ""}">
         <div class="character">${main}</div>
         <div class="writing-box ${!isCorrection && "writing-box--exercise"}">
           ${
@@ -140,8 +139,11 @@ function getPrintStylesObject(
   direction: DirectionType
 ): CSSStyleSheetObject {
   return {
+    ".font-jp": {
+      fontFamily: "'Noto Sans JP', 'Arial', sans-serif",
+    },
     body: {
-      fontFamily: "'Noto Sans JP', Inter, 'Arial', sans-serif",
+      fontFamily: "Inter, 'Arial', sans-serif",
       padding: "0",
       margin: "0",
       color: "#333",
@@ -152,12 +154,16 @@ function getPrintStylesObject(
       gap: "10px",
     },
     ".page-header": {
+      breakBefore: "page",
       display: "flex",
       alignItems: "center",
 
       borderBottom: "1px solid #ddd",
       fontSize: "12px",
       color: "#666",
+    },
+    ".page-header:first-of-type": {
+      breakBefore: "avoid",
     },
     ".exercise-section": {
       breakInside: "avoid",
@@ -166,6 +172,7 @@ function getPrintStylesObject(
       display: "grid",
       gridTemplateColumns: `repeat(${columns}, 1fr)`,
       gap: "10px",
+      padding: "0 1rem",
     },
     ".character-cell": {
       display: "grid",

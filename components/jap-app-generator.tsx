@@ -28,11 +28,6 @@ import {
   SyllabaryType,
 } from "../lib/types";
 
-// Calculate the number of characters per page based on the page format
-const getCharactersPerPage = (format: PageFormatType): number => {
-  return format === "halfPage" ? 96 : 192;
-};
-
 const isDevelopment = process.env.NODE_ENV === "development";
 
 export function JapAppGenerator({
@@ -75,7 +70,7 @@ export function JapAppGenerator({
   // Generate new exercises when parameters change
   useEffect(() => {
     if (exercises.length > 0) {
-      generateExercises();
+      generateAndSet();
     }
   }, [syllabaryType, direction, pageFormat]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -88,32 +83,13 @@ export function JapAppGenerator({
     }
   };
 
-  const generateExercises = () => {
-    const charactersPerPage = getCharactersPerPage(pageFormat);
-
-    const newExercises = Array.from({ length: pageCount }, (_, i) => {
-      // Generate enough characters for the page format
-      // For full page, we need to ensure we have 144 characters
-      const grid = generateGrid(syllabaryType, charactersPerPage);
-
-      // Ensure we have enough characters (in case generateGrid doesn't return enough)
-      while (grid.length < charactersPerPage) {
-        const moreChars = generateGrid(
-          syllabaryType,
-          charactersPerPage - grid.length
-        );
-        grid.push(...moreChars);
-      }
-
-      return {
-        id: `${Date.now()}-${i}`,
-        type: syllabaryType,
-        direction,
-        pageFormat,
-        grid,
-        timestamp: Date.now(),
-      };
-    });
+  const generateAndSet = () => {
+    const newExercises = generateExercises(
+      pageFormat,
+      pageCount,
+      syllabaryType,
+      direction
+    );
 
     setExercises(newExercises);
 
@@ -124,8 +100,8 @@ export function JapAppGenerator({
     });
   };
 
-  const handlePrint = () => {
-    printDocument(exercises, showCorrection, d);
+  const handlePrint = async () => {
+    await printDocument(exercises, showCorrection, d);
   };
 
   const handleDebugPrint = () => {
@@ -259,13 +235,8 @@ export function JapAppGenerator({
               <div className="rounded-lg border p-4">
                 <h3 className="mb-2 font-medium">{d.preview}</h3>
                 {exercises.length > 0 ? (
-                  <div className="max-h-40 overflow-auto">
-                    <ExerciseGrid
-                      exercise={exercises[0]}
-                      showCorrection={showCorrection}
-                      isPreview={true}
-                      direction={direction}
-                    />
+                  <div className="max-h-60 overflow-auto">
+                    <ExerciseGrid exercise={exercises[0]} />
                   </div>
                 ) : (
                   <div className="flex h-32 items-center justify-center text-muted-foreground">
@@ -275,7 +246,7 @@ export function JapAppGenerator({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Button onClick={generateExercises} className="w-full">
+                <Button onClick={generateAndSet} className="w-full">
                   {exercises.length > 0 ? (
                     <RefreshCw className="mr-2 h-4 w-4" />
                   ) : null}
@@ -352,4 +323,38 @@ export function JapAppGenerator({
       </div>
     </div>
   );
+}
+
+// Calculate the number of characters per page based on the page format
+const getCharactersPerPage = (format: PageFormatType): number => {
+  return format === "halfPage" ? 84 : 168;
+};
+
+function generateExercises(
+  pageFormat: PageFormatType,
+  pageCount: number,
+  syllabaryType: SyllabaryType,
+  direction: DirectionType
+): Exercise[] {
+  const charactersPerPage = getCharactersPerPage(pageFormat);
+
+  return Array.from({ length: pageCount }, (_, i) => {
+    const grid = generateGrid(syllabaryType, charactersPerPage);
+    while (grid.length < charactersPerPage) {
+      const moreChars = generateGrid(
+        syllabaryType,
+        charactersPerPage - grid.length
+      );
+      grid.push(...moreChars);
+    }
+
+    return {
+      id: `${Date.now()}-${i}`,
+      type: syllabaryType,
+      direction,
+      pageFormat,
+      grid,
+      timestamp: Date.now(),
+    };
+  });
 }
