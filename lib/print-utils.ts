@@ -1,305 +1,250 @@
 "use client";
 
-interface Exercise {
-  id: string;
-  type: string;
-  direction?: "syllabaryToRomaji" | "romajiToSyllabary";
-  pageFormat?: "halfPage" | "fullPage";
-  grid: { char: string; romaji: string }[];
-}
+import { DirectionType, Exercise } from "@/lib/types";
 
-// Function to create a print-friendly version of the exercises
-export function printDocument(
+export async function printDocument(
   exercises: Exercise[],
   showCorrection: boolean,
-  direction: "syllabaryToRomaji" | "romajiToSyllabary" = "syllabaryToRomaji",
-  pageFormat: "halfPage" | "fullPage" = "halfPage",
-  d: Record<string, string> = {},
-  debug = false
+  d: Record<string, string> = {}
 ) {
-  // Create a hidden iframe for printing instead of opening a new window
-  const iframe = document.createElement("iframe");
-  iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
-  iframe.style.border = "0";
+  if (typeof window === "undefined") return;
 
-  document.body.appendChild(iframe);
+  //@ts-expect-error html2pdf.js has no types
+  const html2pdf = (await import("html2pdf.js")).default;
 
-  // Get the iframe document
-  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+  const container = document.createElement("div");
+  container.innerHTML = generateHtmlContent(exercises, showCorrection, d);
 
-  if (!iframeDoc) {
-    alert("Unable to create print document");
-    return;
-  }
+  const opt = {
+    margin: 0.2,
+    filename: `japapp-exercises.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+  };
 
-  // Fixed number of columns for the grid (12 characters per row)
-  const columns = 12;
-
-  // Add print-specific styles
-  iframeDoc.write(`
-    <html>
-      <head>
-        <title>Jap'App - Print</title>
-        <style>
-          @page {
-            margin: 0.7cm;
-            size: A4;
-          }
-          html, body {
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 0;
-            margin: 0;
-            width: 100%;
-            height: 100%;
-          }
-          .print-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-          }
-          .page-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #ddd;
-            font-size: 12px;
-            color: #666;
-          }
-          .exercise-section {
-            break-inside: avoid;
-            margin-bottom: 15px;
-          }
-          .exercise-grid {
-            display: grid;
-            grid-template-columns: repeat(${columns}, 1fr);
-            gap: 5px;
-          }
-          .character-cell {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          .character {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 35px;
-            height: 35px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: rgba(0, 0, 0, 0.03);
-            font-size: 16px;
-          }
-          .writing-box {
-            position: relative;
-            margin-top: 2px;
-            width: 35px;
-            height: 35px;
-            border: 1px dashed #ddd;
-            border-radius: 4px;
-          }
-          .writing-box::before, .writing-box::after {
-            content: "";
-            position: absolute;
-            background-color: #ddd;
-            opacity: 0.5;
-          }
-          .writing-box::before {
-            /* Horizontal line */
-            width: 100%;
-            height: 1px;
-            top: 50%;
-            left: 0;
-          }
-          .writing-box::after {
-            /* Vertical line */
-            width: 1px;
-            height: 100%;
-            top: 0;
-            left: 50%;
-          }
-          .correction-grid {
-            margin-top: 5px;
-            border-top: 1px solid #eee;
-            padding-top: 3px;
-          }
-          .correction-text {
-            font-size: 16px;
-            font-weight: 500;
-          }
-          @media print {
-            body { margin: 0; padding: 0; }
-            .page-break { page-break-before: always; break-before: page; }
-            .no-break { page-break-inside: avoid; break-inside: avoid; }
-          }
-        </style>
-      </head>
-      <body>
-  `);
-
-  // Create exercise content
-  let exerciseContent = `<div class="print-container">`;
-
-  // Process each exercise
-  exercises.forEach((exercise, exerciseIndex) => {
-    // Use the exercise properties if available, otherwise use the props
-    const exerciseDirection = exercise.direction || direction;
-    const exercisePageFormat = exercise.pageFormat || pageFormat;
-    const exerciseType =
-      exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1);
-
-    // Format direction for display
-    const directionDisplay = d[exerciseDirection];
-
-    // Start a new page for each exercise (except the first one)
-    if (exerciseIndex > 0) {
-      exerciseContent += `<div class="page-break"></div>`;
-    }
-
-    // Add page header with exercise number, type and direction
-    const pageNumber = exercises.length > 1 ? ` ${exerciseIndex + 1}` : "";
-    exerciseContent += `
-      <div class="page-header">
-        <span class="logo"><span style="color: #e32c2c; font-weight: bold;">Jap'</span>App</span> - <span> ${d.exercise}${pageNumber} - ${exerciseType} - ${directionDisplay}</span>
-      </div>
-    `;
-
-    exerciseContent += `
-      <div class="exercise-section no-break">
-        <div class="exercise-grid">
-    `;
-
-    // Calculate how many characters to display based on page format
-    const charactersPerPage = exercisePageFormat === "halfPage" ? 72 : 144;
-
-    // Ensure we have enough characters in the grid
-    const gridToUse = exercise.grid;
-    if (gridToUse.length < charactersPerPage) {
-      console.warn(
-        `Grid has only ${gridToUse.length} characters, but ${charactersPerPage} are needed.`
-      );
-    }
-
-    // Display all characters up to the required count
-    for (let i = 0; i < charactersPerPage; i++) {
-      // If we run out of characters, use the last one as a fallback
-      const item =
-        i < gridToUse.length ? gridToUse[i] : gridToUse[gridToUse.length - 1];
-
-      exerciseContent += `
-        <div class="character-cell">
-          <div class="character">${
-            exerciseDirection === "syllabaryToRomaji" ? item.char : item.romaji
-          }</div>
-          <div class="writing-box"></div>
-        </div>
-      `;
-    }
-
-    exerciseContent += `</div>`;
-
-    // Add correction grid
-    if (showCorrection) {
-      // For full page format, add a page break before correction
-      if (exercisePageFormat === "fullPage") {
-        exerciseContent += `<div class="page-break"></div>`;
-
-        // Add page header with correction number, type and direction
-        const correctionNumber =
-          exercises.length > 1 ? ` ${exerciseIndex + 1}` : "";
-        exerciseContent += `
-          <div class="page-header">
-            <span class="logo"><span style="color: #e32c2c; font-weight: bold;">Jap'</span>App</span> - <span> ${d.correction}${correctionNumber} - ${exerciseType} - ${directionDisplay}</span>
-          </div>
-        `;
-      }
-
-      exerciseContent += `
-        <div class="correction-grid no-break">
-          <div class="exercise-grid">
-      `;
-
-      // Display all characters for correction
-      for (let i = 0; i < charactersPerPage; i++) {
-        // If we run out of characters, use the last one as a fallback
-        const item =
-          i < gridToUse.length ? gridToUse[i] : gridToUse[gridToUse.length - 1];
-
-        exerciseContent += `
-          <div class="character-cell">
-            <div class="character">${
-              exerciseDirection === "syllabaryToRomaji"
-                ? item.char
-                : item.romaji
-            }</div>
-            <div class="writing-box">
-              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" class="correction-text">
-                ${
-                  exerciseDirection === "syllabaryToRomaji"
-                    ? item.romaji
-                    : item.char
-                }
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      exerciseContent += `</div></div>`;
-    }
-
-    exerciseContent += `</div>`;
-  });
-
-  exerciseContent += `</div>`;
-
-  // Complete the HTML document
-  iframeDoc.write(exerciseContent);
-  iframeDoc.write(`
-      </body>
-    </html>
-  `);
-
-  iframeDoc.close();
-
-  // If debug mode is enabled, open in a new window instead of printing
-  if (debug) {
-    const debugWindow = window.open("", "_blank");
-    if (debugWindow) {
-      debugWindow.document.write(iframeDoc.documentElement.outerHTML);
-      debugWindow.document.close();
-    } else {
-      alert("Please allow pop-ups to debug the print layout");
-    }
-    // Remove the iframe
-    document.body.removeChild(iframe);
-    return;
-  }
-
-  // Wait for content to load then print
-  setTimeout(() => {
-    iframe.contentWindow?.focus();
-    iframe.contentWindow?.print();
-
-    // Remove the iframe after printing (or after a timeout)
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 1000);
-  }, 500);
+  await html2pdf().set(opt).from(container).save();
 }
 
-// Helper function to open the print preview in a new window for debugging
 export function debugPrintDocument(
   exercises: Exercise[],
   showCorrection: boolean,
-  direction: "syllabaryToRomaji" | "romajiToSyllabary" = "syllabaryToRomaji",
-  pageFormat: "halfPage" | "fullPage" = "halfPage",
   d: Record<string, string> = {}
 ) {
-  printDocument(exercises, showCorrection, direction, pageFormat, d, true);
+  const html = generateHtmlContent(exercises, showCorrection, d);
+  const debugWindow = window.open("", "_blank");
+  debugWindow?.document.write(html);
+  debugWindow?.document.close();
+}
+
+function generateHtmlContent(
+  exercises: Exercise[],
+  showCorrection: boolean,
+  d: Record<string, string>
+): string {
+  const columns = 16;
+  const style = getPrintStyles(columns, exercises[0].direction);
+
+  let html = `${style}<div class="print-container">`;
+
+  exercises.forEach((exercise, index) => {
+    const { type, direction, pageFormat, grid } = exercise;
+    const directionLabel =
+      direction === "syllabaryToRomaji"
+        ? `${d[type]} → ${d.romaji}`
+        : `${d.romaji} → ${d[type]}`;
+
+    const pageLabel = exercises.length > 1 ? ` ${index + 1}` : "";
+
+    if (index > 0) html += `<div class="page-break"></div>`;
+
+    html += renderHeader(`${d.exercise}${pageLabel} -  ${directionLabel}`);
+    html += `<div class="exercise-section no-break"><div class="exercise-grid">`;
+    html += renderGrid(grid, direction, false);
+    html += `</div>`;
+
+    if (showCorrection) {
+      if (pageFormat === "fullPage") {
+        html += `<div class="page-break"></div>`;
+        html += renderHeader(
+          `${d.correction}${pageLabel} -  ${directionLabel}`
+        );
+      }
+
+      html += `<div class="correction-grid no-break"><div class="exercise-grid">`;
+      html += renderGrid(grid, direction, true);
+      html += `</div></div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function renderHeader(label: string): string {
+  return `
+    <div class="page-header">
+      <span class="logo"><span style="color: #e7000b; font-weight: bold;">Jap'</span>App</span>&nbsp;-&nbsp<span>${label}</span>
+    </div>
+  `;
+}
+
+function renderGrid(
+  grid: { char: string; romaji: string }[],
+  direction: DirectionType,
+  isCorrection: boolean
+): string {
+  let output = "";
+  for (let i = 0; i < grid.length; i++) {
+    const item = i < grid.length ? grid[i] : grid[grid.length - 1];
+    const main = direction === "syllabaryToRomaji" ? item.char : item.romaji;
+    const correction =
+      direction === "syllabaryToRomaji" ? item.romaji : item.char;
+
+    output += `
+      <div class="character-cell">
+        <div class="character">${main}</div>
+        <div class="writing-box ${!isCorrection && "writing-box--exercise"}">
+          ${
+            isCorrection
+              ? `<div class="correction-text">${correction}</div>`
+              : ""
+          }
+        </div>
+      </div>
+    `;
+  }
+  return output;
+}
+
+function getPrintStyles(columns: number, direction: DirectionType): string {
+  const styles = getPrintStylesObject(columns, direction);
+  const fontImport = `
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+  `;
+  return `<style>${fontImport}\n${cssObjectToString(styles)}</style>`;
+}
+
+type CSSProperties = Partial<Record<keyof CSSStyleDeclaration, string>>;
+
+type CSSStyleSheetObject = {
+  [selector: string]: CSSProperties;
+};
+
+function getPrintStylesObject(
+  columns: number,
+  direction: DirectionType
+): CSSStyleSheetObject {
+  return {
+    body: {
+      fontFamily: "'Noto Sans JP', Inter, 'Arial', sans-serif",
+      padding: "0",
+      margin: "0",
+      color: "#333",
+    },
+    ".print-container": {
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+    },
+    ".page-header": {
+      display: "flex",
+      alignItems: "center",
+
+      borderBottom: "1px solid #ddd",
+      fontSize: "12px",
+      color: "#666",
+    },
+    ".exercise-section": {
+      breakInside: "avoid",
+    },
+    ".exercise-grid": {
+      display: "grid",
+      gridTemplateColumns: `repeat(${columns}, 1fr)`,
+      gap: "10px",
+    },
+    ".character-cell": {
+      display: "grid",
+      placeContent: "center",
+      gap: "3px",
+    },
+    ".correction-text": {
+      fontWeight: "500",
+      fontSize: "16px",
+      ...(direction === "romajiToSyllabary" && { fontSize: "20px" }),
+    },
+    ".character": {
+      fontSize: "16px",
+      ...(direction === "syllabaryToRomaji" && { fontSize: "20px" }),
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "35px",
+      height: "35px",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
+      backgroundColor: "rgba(0, 0, 0, 0.03)",
+    },
+    ".writing-box": {
+      position: "relative",
+      marginTop: "2px",
+      width: "35px",
+      height: "35px",
+      border: "1px dashed #ddd",
+      borderRadius: "4px",
+      display: "grid",
+      placeContent: "center",
+    },
+    ".writing-box--exercise::before": {
+      content: '""',
+      position: "absolute",
+      backgroundColor: "#ddd",
+      opacity: "0.5",
+      width: "100%",
+      height: "1px",
+      top: "50%",
+      left: "0",
+    },
+    ".writing-box--exercise::after": {
+      content: '""',
+      position: "absolute",
+      backgroundColor: "#ddd",
+      opacity: "0.5",
+      width: "1px",
+      height: "100%",
+      top: "0",
+      left: "50%",
+    },
+    ".correction-grid": {
+      marginTop: "10px",
+      paddingTop: "10px",
+    },
+
+    ".page-break": {
+      pageBreakBefore: "always",
+      breakBefore: "page",
+    },
+    ".no-break": {
+      pageBreakInside: "avoid",
+      breakInside: "avoid",
+    },
+  };
+}
+
+function cssObjectToString(styles: CSSStyleSheetObject): string {
+  return Object.entries(styles)
+    .map(([selector, declarations]) => {
+      const rules = Object.entries(declarations)
+        .map(([prop, value]) => {
+          const kebabProp = prop.replace(/([A-Z])/g, "-$1").toLowerCase();
+          return `${kebabProp}: ${value};`;
+        })
+        .join(" ");
+      return `${selector} { ${rules} }`;
+    })
+    .join("\n");
 }

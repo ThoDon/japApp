@@ -1,6 +1,6 @@
 {
-  "appName": "Gerador de Exercícios de Japonês",
   "appDescription": "Gere exercícios de japonês para Hiragana, Katakana e Kanji.",
+  "appName": "Gerador de Exercícios de Japonês",
   "characterCount": "Contagem de caracteres",
   "clearHistory": "Limpar tudo",
   "comingSoon": "Em breve...",
@@ -24,9 +24,11 @@
   "preview": "Pré-visualização",
   "print": "Imprimir",
   "regenerate": "Gerar novos exercícios",
+  "romaji": "Romaji",
   "romajiToSyllabary": "Romaji → Silabário",
   "selectCharacterCount": "Selecione a contagem de caracteres",
   "showCorrection": "Mostrar correção",
+  "syllabary": "Silabário",
   "syllabaryToRomaji": "Silabário → Romaji",
   "syllabaryType": "Tipo de silabário"
 }

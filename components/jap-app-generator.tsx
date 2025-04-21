@@ -17,30 +17,22 @@ import {
 } from "@/components/ui/tooltip";
 import { Printer, RefreshCw, Clock, AlertCircle, Bug } from "lucide-react";
 import { generateGrid } from "@/lib/japanese-utils";
-import { printDocument, debugPrintDocument } from "@/lib/print-utils";
+import { debugPrintDocument, printDocument } from "@/lib/print-utils";
 import { ExerciseGrid } from "@/components/exercise-grid";
 import { HistoryItem } from "@/components/history-item";
 import { Locale } from "../i18nConfig";
-
-type SyllabaryType = "hiragana" | "katakana" | "kanji";
-type DirectionType = "syllabaryToRomaji" | "romajiToSyllabary";
-type PageFormatType = "halfPage" | "fullPage";
-
-interface Exercise {
-  id: string;
-  type: SyllabaryType;
-  direction: DirectionType;
-  pageFormat: PageFormatType;
-  grid: { char: string; romaji: string }[];
-  timestamp: number;
-}
+import {
+  DirectionType,
+  Exercise,
+  PageFormatType,
+  SyllabaryType,
+} from "../lib/types";
 
 // Calculate the number of characters per page based on the page format
 const getCharactersPerPage = (format: PageFormatType): number => {
-  return format === "halfPage" ? 72 : 144; // 12x6 for half page, 12x12 for full page
+  return format === "halfPage" ? 96 : 192;
 };
 
-// Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === "development";
 
 export function JapAppGenerator({
@@ -133,11 +125,11 @@ export function JapAppGenerator({
   };
 
   const handlePrint = () => {
-    printDocument(exercises, showCorrection, direction, pageFormat, d);
+    printDocument(exercises, showCorrection, d);
   };
 
   const handleDebugPrint = () => {
-    debugPrintDocument(exercises, showCorrection, direction, pageFormat, d);
+    debugPrintDocument(exercises, showCorrection, d);
   };
 
   const clearHistory = () => {
@@ -162,7 +154,7 @@ export function JapAppGenerator({
   return (
     <div className="space-y-6">
       <Card>
-        <CardContent className="pt-6">
+        <CardContent>
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4">
               <div>
@@ -215,10 +207,10 @@ export function JapAppGenerator({
                 >
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="syllabaryToRomaji">
-                      {d.syllabaryToRomaji}
+                      {d[syllabaryType]} --&gt; {d.romaji}
                     </TabsTrigger>
                     <TabsTrigger value="romajiToSyllabary">
-                      {d.romajiToSyllabary}
+                      {d.romaji} --&gt; {d[syllabaryType]}
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>

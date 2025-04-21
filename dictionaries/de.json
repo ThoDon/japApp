@@ -1,6 +1,6 @@
 {
-  "appName": "Japanische Übungsgenerierungs-App",
   "appDescription": "Generiere japanische Übungen für Hiragana, Katakana und Kanji.",
+  "appName": "Japanische Übungsgenerierungs-App",
   "characterCount": "Anzahl der Zeichen",
   "clearHistory": "Alles löschen",
   "comingSoon": "Demnächst verfügbar...",
@@ -24,9 +24,11 @@
   "preview": "Vorschau",
   "print": "Drucken",
   "regenerate": "Neue Übungen generieren",
+  "romaji": "Romaji",
   "romajiToSyllabary": "Romaji → Silbenschrift",
   "selectCharacterCount": "Zeichenanzahl auswählen",
   "showCorrection": "Korrektur anzeigen",
+  "syllabary": "Silbenschrift",
   "syllabaryToRomaji": "Silbenschrift → Romaji",
   "syllabaryType": "Typ der Silbenschrift"
 }

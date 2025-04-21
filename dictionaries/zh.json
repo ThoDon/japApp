@@ -24,9 +24,11 @@
   "preview": "预览",
   "print": "打印",
   "regenerate": "生成新练习",
+  "romaji": "罗马音",
   "romajiToSyllabary": "罗马音 → 假名",
   "selectCharacterCount": "选择字符数量",
   "showCorrection": "显示纠正",
+  "syllabary": "假名",
   "syllabaryToRomaji": "假名 → 罗马音",
   "syllabaryType": "假名类型"
 }

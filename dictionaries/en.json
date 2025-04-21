@@ -1,6 +1,6 @@
 {
-  "appName": "Japanese Exercise Generator",
   "appDescription": "Generate Japanese exercises for Hiragana, Katakana, and Kanji.",
+  "appName": "Japanese Exercise Generator",
   "characterCount": "Character Count",
   "clearHistory": "Clear All",
   "comingSoon": "Coming soon...",
@@ -24,9 +24,11 @@
   "preview": "Preview",
   "print": "Print",
   "regenerate": "Generate New Exercises",
+  "romaji": "Romaji",
   "romajiToSyllabary": "Romaji → Syllabary",
   "selectCharacterCount": "Select character count",
   "showCorrection": "Show correction",
+  "syllabary": "Syllabary",
   "syllabaryToRomaji": "Syllabary → Romaji",
   "syllabaryType": "Syllabary Type"
 }
