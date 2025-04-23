@@ -15,9 +15,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Printer, RefreshCw, Clock, AlertCircle, Bug } from "lucide-react";
+import { RefreshCw, Clock, AlertCircle } from "lucide-react";
 import { generateGrid } from "@/lib/japanese-utils";
-import { debugPrintDocument, printDocument } from "@/lib/print-utils";
 import { ExerciseGrid } from "@/components/exercise-grid";
 import { HistoryItem } from "@/components/history-item";
 import { Locale } from "../i18nConfig";
@@ -27,8 +26,7 @@ import {
   PageFormatType,
   SyllabaryType,
 } from "../lib/types";
-
-const isDevelopment = process.env.NODE_ENV === "development";
+import { PdfGenerator } from "./pdf-generator";
 
 export function JapAppGenerator({
   d,
@@ -98,14 +96,6 @@ export function JapAppGenerator({
       const combined = [...newExercises, ...prev];
       return combined.slice(0, 10);
     });
-  };
-
-  const handlePrint = async () => {
-    await printDocument(exercises, showCorrection, d);
-  };
-
-  const handleDebugPrint = () => {
-    debugPrintDocument(exercises, showCorrection, d);
   };
 
   const clearHistory = () => {
@@ -214,7 +204,7 @@ export function JapAppGenerator({
                 <Input
                   id="page-count"
                   type="number"
-                  min="1"
+                  min="0"
                   value={pageCount}
                   onChange={handlePageCountChange}
                   className="mt-2"
@@ -254,27 +244,11 @@ export function JapAppGenerator({
                 </Button>
 
                 <div className="flex gap-2">
-                  <Button
-                    onClick={handlePrint}
-                    variant="outline"
-                    disabled={exercises.length === 0}
-                    className="flex-1"
-                  >
-                    <Printer className="mr-2 h-4 w-4" />
-                    {d.print}
-                  </Button>
-
-                  {isDevelopment && (
-                    <Button
-                      onClick={handleDebugPrint}
-                      variant="outline"
-                      disabled={exercises.length === 0}
-                      className="w-10 px-0"
-                      title="Debug Print"
-                    >
-                      <Bug className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <PdfGenerator
+                    exercises={exercises}
+                    showCorrection={showCorrection}
+                    dictionary={d}
+                  />
                 </div>
               </div>
             </div>
@@ -327,7 +301,7 @@ export function JapAppGenerator({
 
 // Calculate the number of characters per page based on the page format
 const getCharactersPerPage = (format: PageFormatType): number => {
-  return format === "halfPage" ? 84 : 168;
+  return format === "halfPage" ? 84 : 132;
 };
 
 function generateExercises(

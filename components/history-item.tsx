@@ -44,7 +44,7 @@ export function HistoryItem({
   };
 
   return (
-    <Card>
+    <Card className="py-0">
       <CardContent className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="font-medium capitalize">{exercise.type}</h3>
