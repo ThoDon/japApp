@@ -24,9 +24,11 @@ import {
   DirectionType,
   Exercise,
   PageFormatType,
+  SyllabarySubset,
   SyllabaryType,
 } from "../lib/types";
 import { PdfGenerator } from "./pdf-generator";
+import CheckboxGroup from "./checkbox-group";
 
 export function JapAppGenerator({
   d,
@@ -43,6 +45,12 @@ export function JapAppGenerator({
   const [direction, setDirection] =
     useState<DirectionType>("syllabaryToRomaji");
   const [pageFormat, setPageFormat] = useState<PageFormatType>("halfPage");
+  const [syllabarySubsets, setSyllabarySubsets] = useState<SyllabarySubset[]>([
+    "dakuten",
+    "handakuten",
+    "gojuon",
+    "yoon",
+  ]);
 
   // Load history from localStorage on component mount
   useEffect(() => {
@@ -86,7 +94,8 @@ export function JapAppGenerator({
       pageFormat,
       pageCount,
       syllabaryType,
-      direction
+      direction,
+      syllabarySubsets
     );
 
     setExercises(newExercises);
@@ -183,6 +192,17 @@ export function JapAppGenerator({
               </div>
 
               <div>
+                <Label className="mb-2">{d.category}</Label>
+                <CheckboxGroup
+                  values={syllabarySubsets}
+                  options={syllabarySubsetsOptions}
+                  onChange={(selectedIds) => {
+                    setSyllabarySubsets(selectedIds as SyllabarySubset[]);
+                  }}
+                />
+              </div>
+
+              <div>
                 <Label>{d.pageFormat}</Label>
                 <Tabs
                   defaultValue="halfPage"
@@ -226,6 +246,14 @@ export function JapAppGenerator({
                 <h3 className="mb-2 font-medium">{d.preview}</h3>
                 {exercises.length > 0 ? (
                   <div className="max-h-60 overflow-auto">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h3 className="font-medium capitalize">
+                        {exercises[0].type}
+                      </h3>
+                      <span className="text-sm text-muted-foreground">
+                        {d[exercises[0].pageFormat]}
+                      </span>
+                    </div>
                     <ExerciseGrid exercise={exercises[0]} />
                   </div>
                 ) : (
@@ -247,6 +275,7 @@ export function JapAppGenerator({
                   <PdfGenerator
                     exercises={exercises}
                     showCorrection={showCorrection}
+                    categories={syllabarySubsets}
                     dictionary={d}
                   />
                 </div>
@@ -308,16 +337,22 @@ function generateExercises(
   pageFormat: PageFormatType,
   pageCount: number,
   syllabaryType: SyllabaryType,
-  direction: DirectionType
+  direction: DirectionType,
+  syllabarySubsets: SyllabarySubset[]
 ): Exercise[] {
   const charactersPerPage = getCharactersPerPage(pageFormat);
 
   return Array.from({ length: pageCount }, (_, i) => {
-    const grid = generateGrid(syllabaryType, charactersPerPage);
+    const grid = generateGrid(
+      syllabaryType,
+      charactersPerPage,
+      syllabarySubsets
+    );
     while (grid.length < charactersPerPage) {
       const moreChars = generateGrid(
         syllabaryType,
-        charactersPerPage - grid.length
+        charactersPerPage - grid.length,
+        syllabarySubsets
       );
       grid.push(...moreChars);
     }
@@ -332,3 +367,10 @@ function generateExercises(
     };
   });
 }
+
+const syllabarySubsetsOptions = [
+  { id: "gojuon", label: "Gojūon" },
+  { id: "dakuten", label: "Dakuten" },
+  { id: "handakuten", label: "Handakuten" },
+  { id: "yoon", label: "Yōon" },
+];

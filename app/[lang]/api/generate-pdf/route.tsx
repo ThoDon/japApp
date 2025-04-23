@@ -1,16 +1,17 @@
 import { NextRequest } from "next/server";
 import { PDFDocument } from "@/pdf/PdfDocument";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { Exercise } from "../../../../lib/types";
+import { Exercise, SyllabarySubset } from "../../../../lib/types";
 
 interface GeneratePdfBody {
   exercises: Exercise[];
   showCorrection: boolean;
   dictionary: Record<string, string>;
+  categories: SyllabarySubset[];
 }
 
 export async function POST(req: NextRequest) {
-  const { exercises, showCorrection, dictionary }: GeneratePdfBody =
+  const { exercises, showCorrection, dictionary, categories }: GeneratePdfBody =
     await req.json();
 
   const stream = await renderToBuffer(
@@ -18,6 +19,7 @@ export async function POST(req: NextRequest) {
       exercises={exercises}
       showCorrection={showCorrection}
       dictionary={dictionary}
+      categories={categories}
     />
   );
 

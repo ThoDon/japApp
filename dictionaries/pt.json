@@ -1,6 +1,7 @@
 {
   "appDescription": "Gere exercícios de japonês para Hiragana, Katakana e Kanji.",
   "appName": "Gerador de Exercícios de Japonês",
+  "category": "Categoria",
   "characterCount": "Contagem de caracteres",
   "clearHistory": "Limpar tudo",
   "comingSoon": "Em breve...",

@@ -6,7 +6,7 @@ import {
   View,
   Font,
 } from "@react-pdf/renderer";
-import { Exercise } from "@/lib/types";
+import { Exercise, SyllabarySubset } from "@/lib/types";
 
 import path from "path";
 
@@ -30,30 +30,28 @@ Font.register({
     },
   ],
 });
-Font.register({
-  family: "Inter",
-  src: path.resolve(process.cwd(), "./public/fonts/Inter-SemiBold.woff2"),
-  fontWeight: 500,
-});
 
 type Props = {
   exercises: Exercise[];
   showCorrection: boolean;
   dictionary: Record<string, string>;
+  categories: SyllabarySubset[];
 };
 
 export const PDFDocument = ({
   exercises,
   showCorrection,
   dictionary,
+  categories,
 }: Props) => {
   return (
     <Document>
-      {exercises.map((exercise, index) => {
-        const directionLabel =
-          exercise.direction === "syllabaryToRomaji"
-            ? `${dictionary[exercise.type]} → ${dictionary.romaji}`
-            : `${dictionary.romaji} → ${dictionary[exercise.type]}`;
+      {exercises.map(({ direction, type, grid, pageFormat }, index) => {
+        const isSyllabaryToRomaji = direction === "syllabaryToRomaji";
+
+        const directionLabel = isSyllabaryToRomaji
+          ? `${dictionary[type]} → ${dictionary.romaji}`
+          : `${dictionary.romaji} → ${dictionary[type]}`;
 
         const pageLabel = exercises.length > 1 ? ` ${index + 1}` : "";
         const title = `${dictionary.exercise}${pageLabel} - ${directionLabel}`;
@@ -65,14 +63,19 @@ export const PDFDocument = ({
             </Text>
 
             <View style={styles.grid}>
-              {exercise.grid.map((item, idx) => {
-                const char =
-                  exercise.direction === "syllabaryToRomaji"
-                    ? item.char
-                    : item.romaji;
+              {grid.map((item, idx) => {
+                const char = isSyllabaryToRomaji ? item.char : item.romaji;
                 return (
                   <View key={idx} style={styles.cell}>
-                    <Text style={styles.character}>{char}</Text>
+                    <Text
+                      style={
+                        isSyllabaryToRomaji
+                          ? styles.characterJP
+                          : styles.characterLatin
+                      }
+                    >
+                      {char}
+                    </Text>
                     <View style={styles.writingBox}></View>
                   </View>
                 );
@@ -82,18 +85,17 @@ export const PDFDocument = ({
             {showCorrection && (
               <View
                 style={styles.correctionSection}
-                break={exercise.pageFormat === "fullPage" ? true : false}
+                break={pageFormat === "fullPage" ? true : false}
               >
                 <Text style={styles.header}>
                   {dictionary.correction}
                   {pageLabel} - {directionLabel}
                 </Text>
                 <View style={styles.grid}>
-                  {exercise.grid.map((item, idx) => {
-                    const correction =
-                      exercise.direction === "syllabaryToRomaji"
-                        ? item.romaji
-                        : item.char;
+                  {grid.map((item, idx) => {
+                    const correction = isSyllabaryToRomaji
+                      ? item.romaji
+                      : item.char;
                     return (
                       <View key={idx} style={styles.cell}>
                         <View style={styles.correctionBox}>
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
   page: {
     color: "#000",
     fontFamily: "Noto Sans JP",
-    fontWeight: "bold",
+    fontWeight: 400,
     fontSize: 12,
     padding: 16,
     lineHeight: 1.6,
@@ -127,6 +129,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     borderBottom: "1px solid #ccc",
     marginBottom: 10,
+    fontWeight: 700,
   },
   logo: {
     color: "#e7000b",
@@ -156,26 +159,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  character: {
-    fontFamily: "Noto Sans JP",
-    fontWeight: 400,
+  characterJP: {
     fontSize: 18,
     marginBottom: 10,
   },
   characterLatin: {
-    fontFamily: "Inter",
-    fontWeight: 400,
-    fontSize: 18,
+    fontSize: 14,
     marginBottom: 10,
   },
   correctionCharacter: {
-    fontFamily: "Noto Sans JP",
-    fontWeight: 400,
-    fontSize: 12,
-  },
-  correctionLatin: {
-    fontFamily: "Inter",
-    fontWeight: 400,
     fontSize: 12,
   },
   writingBox: {
