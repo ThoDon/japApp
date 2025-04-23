@@ -80,7 +80,10 @@ export const PDFDocument = ({
             </View>
 
             {showCorrection && (
-              <View style={styles.correctionSection}>
+              <View
+                style={styles.correctionSection}
+                break={exercise.pageFormat === "fullPage" ? true : false}
+              >
                 <Text style={styles.header}>
                   {dictionary.correction}
                   {pageLabel} - {directionLabel}
