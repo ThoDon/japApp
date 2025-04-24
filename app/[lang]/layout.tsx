@@ -20,7 +20,7 @@ export async function generateMetadata({
   const dictionary = await getDictionary((await params).lang);
 
   return {
-    title: `Jap'App - ${dictionary.appName}`,
+    title: `Kana'Sheet - ${dictionary.appName}`,
     description: dictionary.appDescription,
   };
 }

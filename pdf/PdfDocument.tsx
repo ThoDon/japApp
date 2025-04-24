@@ -59,7 +59,7 @@ export const PDFDocument = ({
         return (
           <Page size="A4" style={styles.page} key={index}>
             <Text style={styles.header}>
-              <Text style={styles.logo}>Jap</Text>&apos;App - {title}
+              <Text style={styles.logo}>Kana'</Text>&apos;Sheet - {title}
             </Text>
 
             <View style={styles.grid}>

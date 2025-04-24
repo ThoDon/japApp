@@ -18,7 +18,7 @@ export default async function Home({
         <>
           <header className="mb-8 flex items-center justify-between">
             <h1 className="text-2xl font-bold md:text-3xl">
-              <span className="jap-highlight">Jap&apos;</span>App
+              <span className="jap-highlight">Kana&apos;</span>Sheet
             </h1>
             <div className="flex items-center gap-2">
               <LanguageSwitcher locale={lang} />
@@ -31,7 +31,8 @@ export default async function Home({
           </Suspense>
 
           <footer className="mt-12 text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Jap&apos;App - {dictionary.footer}
+            &copy; {new Date().getFullYear()} Kana&apos;Sheet -{" "}
+            {dictionary.footer}
           </footer>
         </>
       </div>

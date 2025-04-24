@@ -55,7 +55,7 @@ export function JapAppGenerator({
   // Load history from localStorage on component mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedHistory = localStorage.getItem("japapp-history");
+      const savedHistory = localStorage.getItem("kana-history");
       if (savedHistory) {
         try {
           setHistory(JSON.parse(savedHistory));
@@ -69,7 +69,7 @@ export function JapAppGenerator({
   // Save history to localStorage when it changes
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("japapp-history", JSON.stringify(history));
+      localStorage.setItem("kana-sheet-history", JSON.stringify(history));
     }
   }, [history]);
 
@@ -110,7 +110,7 @@ export function JapAppGenerator({
   const clearHistory = () => {
     setHistory([]);
     if (typeof window !== "undefined") {
-      localStorage.removeItem("japapp-history");
+      localStorage.removeItem("kana-history");
     }
   };
 

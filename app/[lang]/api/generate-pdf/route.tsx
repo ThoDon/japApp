@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   return new Response(stream, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": "inline; filename=japapp-exercises.pdf",
+      "Content-Disposition": "inline; filename=kana-sheet-exercises.pdf",
     },
   });
 }

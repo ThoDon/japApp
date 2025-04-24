@@ -26,7 +26,7 @@ async function generatePdf(
   // Download the PDF file
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "japapp-exercises.pdf";
+  link.download = "kana-sheet-exercises.pdf";
   link.click();
 }
 
