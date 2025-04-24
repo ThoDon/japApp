@@ -9,6 +9,7 @@ import {
 import { Exercise, SyllabarySubset } from "@/lib/types";
 
 import path from "path";
+import { syllabarySubsetsRecord } from "../lib/utils";
 
 Font.register({
   family: "Noto Sans JP",
@@ -54,13 +55,15 @@ export const PDFDocument = ({
           : `${dictionary.romaji} → ${dictionary[type]}`;
 
         const pageLabel = exercises.length > 1 ? ` ${index + 1}` : "";
-        const title = `${dictionary.exercise}${pageLabel} - ${directionLabel}`;
 
         return (
           <Page size="A4" style={styles.page} key={index}>
-            <Text style={styles.header}>
-              <Text style={styles.logo}>Kana'</Text>&apos;Sheet - {title}
-            </Text>
+            {getSectionHeader(
+              dictionary,
+              pageLabel,
+              directionLabel,
+              categories
+            )}
 
             <View style={styles.grid}>
               {grid.map((item, idx) => {
@@ -83,14 +86,14 @@ export const PDFDocument = ({
             </View>
 
             {showCorrection && (
-              <View
-                style={styles.correctionSection}
-                break={pageFormat === "fullPage" ? true : false}
-              >
-                <Text style={styles.header}>
-                  {dictionary.correction}
-                  {pageLabel} - {directionLabel}
-                </Text>
+              <View break={pageFormat === "fullPage" ? true : false}>
+                {getSectionHeader(
+                  dictionary,
+                  pageLabel,
+                  directionLabel,
+                  categories,
+                  true
+                )}
                 <View style={styles.grid}>
                   {grid.map((item, idx) => {
                     const correction = isSyllabaryToRomaji
@@ -116,6 +119,41 @@ export const PDFDocument = ({
   );
 };
 
+function getSectionHeader(
+  dictionary: Record<string, string>,
+  pageLabel: string,
+  directionLabel: string,
+  categories: SyllabarySubset[],
+  isCorrection?: boolean
+) {
+  return (
+    <View style={styles.header}>
+      <View style={{ display: "flex", flexDirection: "row" }}>
+        {!isCorrection && (
+          <>
+            <Text style={styles.logo}>Kana</Text>
+            <Text>&apos;Sheet - </Text>
+          </>
+        )}
+        <Text style={{ fontWeight: 400 }}>
+          {!isCorrection ? dictionary.exercise : dictionary.correction}
+          {pageLabel}
+        </Text>
+      </View>
+      <View>
+        <Text style={{ fontWeight: 400, color: "#cacaca", fontSize: "8px" }}>
+          {directionLabel} (
+          {categories.sort(sortByCategory).map((x, index) => {
+            const isLast = categories.length - 1 === index;
+            return `${syllabarySubsetsRecord[x]}${!isLast ? " - " : ""}`;
+          })}
+          )
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   page: {
     color: "#000",
@@ -130,6 +168,10 @@ const styles = StyleSheet.create({
     borderBottom: "1px solid #ccc",
     marginBottom: 10,
     fontWeight: 700,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
   logo: {
     color: "#e7000b",
@@ -178,5 +220,17 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     borderRadius: 5,
   },
-  correctionSection: {},
+  correctionSection: {
+    display: "flex",
+    flexDirection: "row",
+    width: "100%",
+  },
 });
+
+const order = ["gojuon", "dakuten", "handakuten", "yoon"];
+
+const sortByCategory = (() => {
+  const orderMap = Object.fromEntries(order.map((key, index) => [key, index]));
+  return (a: string, b: string) =>
+    (orderMap[a] ?? Infinity) - (orderMap[b] ?? Infinity);
+})();

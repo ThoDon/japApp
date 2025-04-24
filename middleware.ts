@@ -1,7 +1,7 @@
 import { match } from "@formatjs/intl-localematcher";
 import Negotiator from "negotiator";
 import { NextResponse, NextRequest } from "next/server";
-import { Locale } from "./i18nConfig";
+import { Locale } from "./i18n/i18nConfig";
 
 const locales: Locale[] = ["fr", "en", "es", "de", "it", "pt", "zh"];
 const defaultLocale = "fr";

@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Trash2, ExternalLink } from "lucide-react";
 import { ExerciseGrid } from "./exercise-grid";
-import { Locale } from "../i18nConfig";
+import { Locale } from "../i18n/i18nConfig";
 
 import type { Exercise } from "../lib/types";
 

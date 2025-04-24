@@ -19,7 +19,7 @@ import { RefreshCw, Clock, AlertCircle } from "lucide-react";
 import { generateGrid } from "@/lib/japanese-utils";
 import { ExerciseGrid } from "@/components/exercise-grid";
 import { HistoryItem } from "@/components/history-item";
-import { Locale } from "../i18nConfig";
+import { Locale } from "../i18n/i18nConfig";
 import {
   DirectionType,
   Exercise,
@@ -29,6 +29,7 @@ import {
 } from "../lib/types";
 import { PdfGenerator } from "./pdf-generator";
 import CheckboxGroup from "./checkbox-group";
+import { syllabarySubsetsRecord } from "../lib/utils";
 
 export function JapAppGenerator({
   d,
@@ -46,9 +47,9 @@ export function JapAppGenerator({
     useState<DirectionType>("syllabaryToRomaji");
   const [pageFormat, setPageFormat] = useState<PageFormatType>("halfPage");
   const [syllabarySubsets, setSyllabarySubsets] = useState<SyllabarySubset[]>([
+    "gojuon",
     "dakuten",
     "handakuten",
-    "gojuon",
     "yoon",
   ]);
 
@@ -368,9 +369,6 @@ function generateExercises(
   });
 }
 
-const syllabarySubsetsOptions = [
-  { id: "gojuon", label: "Gojūon" },
-  { id: "dakuten", label: "Dakuten" },
-  { id: "handakuten", label: "Handakuten" },
-  { id: "yoon", label: "Yōon" },
-];
+const syllabarySubsetsOptions = Object.entries(syllabarySubsetsRecord).map(
+  ([key, value]) => ({ id: key, label: value })
+);

@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import { JapAppGenerator } from "../../components/jap-app-generator";
 import { LanguageSwitcher } from "../../components/language-switcher";
 import { ThemeSwitcher } from "../../components/theme-switcher";
-import { getDictionary } from "./dictionaries";
-import { Locale } from "../../i18nConfig";
+import { getDictionary } from "../../i18n/dictionaries";
+import { Locale } from "../../i18n/i18nConfig";
 
 export default async function Home({
   params,
