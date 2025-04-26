@@ -60,7 +60,9 @@ export function PdfGenerator(props: PdfGeneratorProps) {
       className="flex-1"
     >
       {isGenerating ? (
-        <Loader className="mr-2 h-4 w-4 animate-spin" />
+        <>
+          <Loader className="mr-2 h-4 w-4 animate-spin" /> {dictionary.patience}
+        </>
       ) : (
         <>
           <Printer className="mr-2 h-4 w-4" />

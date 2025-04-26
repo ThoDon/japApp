@@ -39,7 +39,7 @@ export function JapAppGenerator({
   locale: Locale;
 }) {
   const [syllabaryType, setSyllabaryType] = useState<SyllabaryType>("hiragana");
-  const [pageCount, setPageCount] = useState<number>(1);
+  const [pageCount, setPageCount] = useState<number | undefined>(undefined);
   const [showCorrection, setShowCorrection] = useState<boolean>(true);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [history, setHistory] = useState<Exercise[]>([]);
@@ -83,14 +83,16 @@ export function JapAppGenerator({
 
   const handlePageCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseInt(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      setPageCount(value);
-    } else {
-      setPageCount(1);
+    if (!value) setPageCount(undefined);
+    if (!isNaN(value) && value > 0 && value <= 10) {
+      return setPageCount(value);
     }
+
+    return setPageCount(1);
   };
 
   const generateAndSet = () => {
+    if (!pageCount) return;
     const newExercises = generateExercises(
       pageFormat,
       pageCount,
@@ -225,7 +227,8 @@ export function JapAppGenerator({
                 <Input
                   id="page-count"
                   type="number"
-                  min="0"
+                  min={0}
+                  max={10}
                   value={pageCount}
                   onChange={handlePageCountChange}
                   className="mt-2"
