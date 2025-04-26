@@ -1,17 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { ExerciseGrid } from "./exercise-grid";
-import { PdfGenerator } from "./pdf-generator";
-import { JapAppState, JapAppAction } from "@/lib/types/jap-app-types";
+import { ExerciseGrid } from "../shared/exercise-grid";
+import { GeneratorButton } from "./generator-button";
+import { GeneratorState, GeneratorAction } from "@/lib/types";
 
-interface JapAppPreviewProps {
-  state: JapAppState;
-  dispatch: React.Dispatch<JapAppAction>;
+interface GeneratorPreviewProps {
+  state: GeneratorState;
+  dispatch: React.Dispatch<GeneratorAction>;
   d: Record<string, string>;
   onGenerate: () => void;
 }
 
-export function JapAppPreview({ state, d, onGenerate }: JapAppPreviewProps) {
+export function GeneratorPreview({
+  state,
+  d,
+  onGenerate,
+}: GeneratorPreviewProps) {
   return (
     <div className="flex flex-col justify-between gap-4">
       <div className="rounded-lg border p-4 h-full">
@@ -43,8 +47,8 @@ export function JapAppPreview({ state, d, onGenerate }: JapAppPreviewProps) {
           {state.exercises.length > 0 ? d.regenerate : d.generate}
         </Button>
 
-        <div className="flex gap-2">
-          <PdfGenerator
+        <div className="flex flex-col gap-2">
+          <GeneratorButton
             exercises={state.exercises}
             showCorrection={state.showCorrection}
             categories={state.syllabarySubsets}

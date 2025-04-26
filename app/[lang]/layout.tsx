@@ -1,12 +1,12 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
+import { Noto_Sans } from "next/font/google";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import "../globals.css";
 import { Locale, i18n } from "../../i18n/i18nConfig";
 import { getDictionary } from "../../i18n/dictionaries";
 
-const inter = Inter({ subsets: ["latin"] });
+const NotoSans = Noto_Sans({ subsets: ["latin"] });
 
 export async function generateStaticParams() {
   return i18n.locales.map((locale) => ({ lang: locale }));
@@ -34,7 +34,7 @@ export default async function RootLayout({
 }) {
   return (
     <html lang={(await params).lang} suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={NotoSans.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

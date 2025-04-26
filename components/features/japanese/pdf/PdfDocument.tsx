@@ -7,9 +7,9 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { Exercise, SyllabarySubset } from "@/lib/types";
+import { syllabarySubsetsRecord } from "@/lib/japanese-utils";
 
 import path from "path";
-import { syllabarySubsetsRecord } from "../lib/utils";
 
 Font.register({
   family: "Noto Sans JP",

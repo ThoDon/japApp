@@ -9,23 +9,27 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { AlertCircle } from "lucide-react";
-import CheckboxGroup from "./checkbox-group";
-import { JapAppState, JapAppAction } from "@/lib/types/jap-app-types";
-import { syllabarySubsetsRecord } from "@/lib/utils";
 import {
   DirectionType,
   PageFormatType,
   SyllabaryType,
   SyllabarySubset,
 } from "@/lib/types";
+import CheckboxGroup from "../shared/checkbox-group";
+import { GeneratorState, GeneratorAction } from "@/lib/types";
+import { syllabarySubsetsRecord } from "@/lib/japanese-utils";
 
-interface JapAppControlsProps {
-  state: JapAppState;
-  dispatch: React.Dispatch<JapAppAction>;
+interface GeneratorControlsProps {
+  state: GeneratorState;
+  dispatch: React.Dispatch<GeneratorAction>;
   d: Record<string, string>;
 }
 
-export function JapAppControls({ state, dispatch, d }: JapAppControlsProps) {
+export function GeneratorControls({
+  state,
+  dispatch,
+  d,
+}: GeneratorControlsProps) {
   const handlePageCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const numValue = Number.parseInt(value);
@@ -107,10 +111,10 @@ export function JapAppControls({ state, dispatch, d }: JapAppControlsProps) {
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="syllabaryToRomaji">
-              {d[state.syllabaryType]} --&gt; {d.romaji}
+              {d[state.syllabaryType]} &rarr; {d.romaji}
             </TabsTrigger>
             <TabsTrigger value="romajiToSyllabary">
-              {d.romaji} --&gt; {d[state.syllabaryType]}
+              {d.romaji} &rarr; {d[state.syllabaryType]}
             </TabsTrigger>
           </TabsList>
         </Tabs>

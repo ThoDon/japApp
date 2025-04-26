@@ -1,5 +1,4 @@
-import { Exercise } from "../lib/types";
-
+import { Exercise } from "@/lib/types";
 interface ExerciseGridProps {
   exercise: Exercise;
 }
@@ -7,7 +6,7 @@ interface ExerciseGridProps {
 export function ExerciseGrid({ exercise }: ExerciseGridProps) {
   const exerciseDirection = exercise.direction;
 
-  // For preview, we'll show a limited number of characters
+  // For preview, we'll show a limited number of ∏characters
   const previewGrid = exercise.grid.slice(0, 4);
 
   return (

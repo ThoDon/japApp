@@ -1,6 +1,6 @@
-import { JapAppState, JapAppAction } from "../types/jap-app-types";
+import { GeneratorState, GeneratorAction } from "../types";
 
-export const initialState: JapAppState = {
+export const initialState: GeneratorState = {
   syllabaryType: "hiragana",
   pageCount: 1,
   showCorrection: true,
@@ -11,10 +11,10 @@ export const initialState: JapAppState = {
   syllabarySubsets: ["gojuon", "dakuten", "handakuten", "yoon"],
 };
 
-export function japAppReducer(
-  state: JapAppState,
-  action: JapAppAction
-): JapAppState {
+export function generatorReducer(
+  state: GeneratorState,
+  action: GeneratorAction
+): GeneratorState {
   switch (action.type) {
     case "SET_SYLLABARY_TYPE":
       return { ...state, syllabaryType: action.payload };

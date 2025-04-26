@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import { JapAppGenerator } from "../../components/jap-app-generator";
-import { LanguageSwitcher } from "../../components/language-switcher";
-import { ThemeSwitcher } from "../../components/theme-switcher";
-import { getDictionary } from "../../i18n/dictionaries";
-import { Locale } from "../../i18n/i18nConfig";
+import { LanguageSwitcher } from "@/components/language/language-switcher";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
+import { getDictionary } from "@/i18n/dictionaries";
+import { Locale } from "@/i18n/i18nConfig";
+import { Generator } from "@/components/features/japanese/generator/generator";
 
 export default async function Home({
   params,
@@ -27,7 +27,7 @@ export default async function Home({
           </header>
 
           <Suspense fallback={<div>Loading...</div>}>
-            <JapAppGenerator d={dictionary} locale={lang} />
+            <Generator d={dictionary} locale={lang} />
           </Suspense>
 
           <footer className="mt-12 text-center text-sm text-muted-foreground">

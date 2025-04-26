@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { PDFDocument } from "@/pdf/PdfDocument";
+import { PDFDocument } from "@/components/features/japanese/pdf/PdfDocument";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { Exercise, SyllabarySubset } from "../../../../lib/types";
 

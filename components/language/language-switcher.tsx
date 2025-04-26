@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
 import { redirect } from "next/navigation";
-import { Locale, i18n } from "../i18n/i18nConfig";
-import { cn } from "../lib/utils";
+import { Locale, i18n } from "../../i18n/i18nConfig";
+import { cn } from "../../lib/utils";
 
 export function LanguageSwitcher({ locale }: { locale: Locale }) {
   const redirectToLocale = (newLocale: string) => {

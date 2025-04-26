@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useReducer } from "react";
 import { generateGrid } from "@/lib/japanese-utils";
-import { JapAppControls } from "./jap-app-controls";
-import { JapAppPreview } from "./jap-app-preview";
-import { JapAppHistory } from "./jap-app-history";
+import { GeneratorControls } from "./generator-controls";
+import { GeneratorPreview } from "./generator-preview";
 import { Locale } from "@/i18n/i18nConfig";
 import {
   Exercise,
@@ -13,17 +12,21 @@ import {
   SyllabaryType,
   SyllabarySubset,
 } from "@/lib/types";
-import { japAppReducer, initialState } from "@/lib/reducers/jap-app-reducer";
-import { Card, CardContent } from "./ui/card";
+import {
+  generatorReducer,
+  initialState,
+} from "@/lib/reducers/generator-reducer";
+import { Card, CardContent } from "@/components/ui/card";
+import { History } from "../history/history";
 
-export function JapAppGenerator({
+export function Generator({
   d,
   locale,
 }: {
   d: Record<string, string>;
   locale: Locale;
 }) {
-  const [state, dispatch] = useReducer(japAppReducer, initialState);
+  const [state, dispatch] = useReducer(generatorReducer, initialState);
 
   const generateAndSet = useCallback(() => {
     if (!state.pageCount) return;
@@ -91,8 +94,8 @@ export function JapAppGenerator({
     <div className="space-y-6">
       <Card>
         <CardContent className="grid gap-6 md:grid-cols-2">
-          <JapAppControls state={state} dispatch={dispatch} d={d} />
-          <JapAppPreview
+          <GeneratorControls state={state} dispatch={dispatch} d={d} />
+          <GeneratorPreview
             state={state}
             dispatch={dispatch}
             d={d}
@@ -100,7 +103,7 @@ export function JapAppGenerator({
           />
         </CardContent>
       </Card>
-      <JapAppHistory
+      <History
         state={state}
         dispatch={dispatch}
         d={d}

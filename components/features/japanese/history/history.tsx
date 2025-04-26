@@ -1,25 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Clock, AlertCircle } from "lucide-react";
 import { HistoryItem } from "./history-item";
-import { JapAppState, JapAppAction } from "@/lib/types/jap-app-types";
 import { Locale } from "@/i18n/i18nConfig";
-import { Exercise } from "@/lib/types";
-
-interface JapAppHistoryProps {
-  state: JapAppState;
-  dispatch: React.Dispatch<JapAppAction>;
+import { Exercise, GeneratorAction, GeneratorState } from "@/lib/types";
+interface HistoryProps {
+  state: GeneratorState;
+  dispatch: React.Dispatch<GeneratorAction>;
   d: Record<string, string>;
   locale: Locale;
   onLoadFromHistory: (exercise: Exercise) => void;
 }
 
-export function JapAppHistory({
+export function History({
   state,
   dispatch,
   d,
   locale,
   onLoadFromHistory,
-}: JapAppHistoryProps) {
+}: HistoryProps) {
   const clearHistory = () => {
     dispatch({ type: "CLEAR_HISTORY" });
     if (typeof window !== "undefined") {

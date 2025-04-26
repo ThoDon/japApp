@@ -5,10 +5,9 @@ import { fr, enUS, es, de, it, pt, zhCN } from "date-fns/locale";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Trash2, ExternalLink } from "lucide-react";
-import { ExerciseGrid } from "./exercise-grid";
-import { Locale } from "../i18n/i18nConfig";
-
-import type { Exercise } from "../lib/types";
+import type { Exercise } from "@/lib/types";
+import { Locale } from "@/i18n/i18nConfig";
+import { ExerciseGrid } from "../shared/exercise-grid";
 
 interface HistoryItemProps {
   exercise: Exercise;

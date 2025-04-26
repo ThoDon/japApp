@@ -276,3 +276,10 @@ export function generateGrid(
   // Take exactly the number of characters needed
   return allChars.slice(0, count);
 }
+
+export const syllabarySubsetsRecord: Record<SyllabarySubset, string> = {
+  gojuon: "Gojūon",
+  dakuten: "Dakuten",
+  handakuten: "Handakuten",
+  yoon: "Yōon",
+};
