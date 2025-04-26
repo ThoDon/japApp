@@ -1,5 +1,4 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,6 +17,13 @@ import {
 import CheckboxGroup from "../shared/checkbox-group";
 import { GeneratorState, GeneratorAction } from "@/lib/types";
 import { syllabarySubsetsRecord } from "@/lib/japanese-utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface GeneratorControlsProps {
   state: GeneratorState;
@@ -30,29 +36,6 @@ export function GeneratorControls({
   dispatch,
   d,
 }: GeneratorControlsProps) {
-  const handlePageCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const numValue = Number.parseInt(value);
-    // Allow any input while typing, including empty
-    if (value === "" || !isNaN(numValue)) {
-      dispatch({
-        type: "SET_PAGE_COUNT",
-        payload: value === "" ? undefined : numValue,
-      });
-    }
-  };
-
-  const handlePageCountBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const numValue = Number.parseInt(value);
-    // Only validate and set constraints on blur
-    if (value === "" || isNaN(numValue) || numValue < 1) {
-      dispatch({ type: "SET_PAGE_COUNT", payload: 1 });
-    } else if (numValue > 10) {
-      dispatch({ type: "SET_PAGE_COUNT", payload: 10 });
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div>
@@ -161,16 +144,23 @@ export function GeneratorControls({
 
       <div>
         <Label htmlFor="page-count">{d.numberOfPages}</Label>
-        <Input
-          id="page-count"
-          type="number"
-          min={1}
-          max={10}
-          value={state.pageCount}
-          onChange={handlePageCountChange}
-          onBlur={handlePageCountBlur}
-          className="mt-2"
-        />
+        <Select
+          value={state.pageCount?.toString()}
+          onValueChange={(value: string) =>
+            dispatch({ type: "SET_PAGE_COUNT", payload: parseInt(value) })
+          }
+        >
+          <SelectTrigger className="mt-2 w-full">
+            <SelectValue placeholder="Select pages" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+              <SelectItem key={num} value={num.toString()}>
+                {num}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex items-center space-x-2">
