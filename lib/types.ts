@@ -19,7 +19,7 @@ export interface Exercise {
 
 export interface GeneratorState {
   syllabaryType: SyllabaryType;
-  pageCount: number | undefined;
+  pageCount: number;
   showCorrection: boolean;
   exercises: Exercise[];
   history: Exercise[];

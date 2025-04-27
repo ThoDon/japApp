@@ -29,7 +29,6 @@ export function Generator({
   const [state, dispatch] = useReducer(generatorReducer, initialState);
 
   const generateAndSet = useCallback(() => {
-    if (!state.pageCount) return;
     const newExercises = generateExercises(
       state.pageFormat,
       state.pageCount,
@@ -78,8 +77,9 @@ export function Generator({
     state.syllabaryType,
     state.direction,
     state.pageFormat,
-    generateAndSet,
+    state.showCorrection,
     state.exercises.length,
+    generateAndSet,
   ]);
 
   const loadFromHistory = (exercise: Exercise) => {
