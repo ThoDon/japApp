@@ -30,7 +30,7 @@ export interface GeneratorState {
 
 export type GeneratorAction =
   | { type: "SET_SYLLABARY_TYPE"; payload: SyllabaryType }
-  | { type: "SET_PAGE_COUNT"; payload: number | undefined }
+  | { type: "SET_PAGE_COUNT"; payload: number }
   | { type: "SET_SHOW_CORRECTION"; payload: boolean }
   | { type: "SET_EXERCISES"; payload: Exercise[] }
   | { type: "SET_HISTORY"; payload: Exercise[] }
