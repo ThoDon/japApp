@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Exercise, SyllabarySubset } from "@/lib/types";
+import type { Exercise, SyllabarySubset, CharSubset } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Info, Loader, Printer } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -11,16 +11,24 @@ type GeneratorButtonProps = {
   showCorrection: boolean;
   dictionary: Record<string, string>;
   categories: SyllabarySubset[];
+  charSubsets: CharSubset[];
 };
 
 export function GeneratorButton(props: GeneratorButtonProps) {
-  const { exercises, showCorrection, dictionary, categories } = props;
+  const { exercises, showCorrection, dictionary, categories, charSubsets } =
+    props;
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGeneratePdf = async () => {
     setIsGenerating(true);
     try {
-      await generatePdf(exercises, showCorrection, categories, dictionary);
+      await generatePdf(
+        exercises,
+        showCorrection,
+        categories,
+        charSubsets,
+        dictionary
+      );
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
@@ -65,12 +73,19 @@ async function generatePdf(
   exercises: Exercise[],
   showCorrection: boolean,
   categories: SyllabarySubset[],
+  charSubsets: CharSubset[],
   dictionary: Record<string, string>
 ) {
   const response = await fetch("/api/generate-pdf", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ exercises, showCorrection, dictionary, categories }),
+    body: JSON.stringify({
+      exercises,
+      showCorrection,
+      dictionary,
+      categories,
+      charSubsets,
+    }),
   });
 
   if (!response.ok) {

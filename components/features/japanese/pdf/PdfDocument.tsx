@@ -6,8 +6,11 @@ import {
   View,
   Font,
 } from "@react-pdf/renderer";
-import { Exercise, SyllabarySubset } from "@/lib/types";
-import { syllabarySubsetsRecord } from "@/lib/japanese-utils";
+import { Exercise, SyllabarySubset, CharSubset } from "@/lib/types";
+import {
+  syllabarySubsetsRecord,
+  charSubsetsRecord,
+} from "@/lib/japanese-utils";
 
 import path from "path";
 
@@ -37,6 +40,7 @@ type Props = {
   showCorrection: boolean;
   dictionary: Record<string, string>;
   categories: SyllabarySubset[];
+  charSubsets: CharSubset[];
 };
 
 export const PDFDocument = ({
@@ -44,6 +48,7 @@ export const PDFDocument = ({
   showCorrection,
   dictionary,
   categories,
+  charSubsets,
 }: Props) => {
   return (
     <Document>
@@ -62,7 +67,8 @@ export const PDFDocument = ({
               dictionary,
               pageLabel,
               directionLabel,
-              categories
+              categories,
+              charSubsets
             )}
 
             <View style={styles.grid}>
@@ -92,6 +98,7 @@ export const PDFDocument = ({
                   pageLabel,
                   directionLabel,
                   categories,
+                  charSubsets,
                   true
                 )}
                 <View style={styles.grid}>
@@ -99,8 +106,20 @@ export const PDFDocument = ({
                     const correction = isSyllabaryToRomaji
                       ? item.romaji
                       : item.char;
+                    const char = isSyllabaryToRomaji ? item.char : item.romaji;
                     return (
                       <View key={idx} style={styles.cell}>
+                        {pageFormat === "fullPage" && (
+                          <Text
+                            style={
+                              isSyllabaryToRomaji
+                                ? styles.characterJP
+                                : styles.characterLatin
+                            }
+                          >
+                            {char}
+                          </Text>
+                        )}
                         <View style={styles.correctionBox}>
                           <Text style={styles.correctionCharacter}>
                             {correction}
@@ -124,6 +143,7 @@ function getSectionHeader(
   pageLabel: string,
   directionLabel: string,
   categories: SyllabarySubset[],
+  charSubsets: CharSubset[],
   isCorrection?: boolean
 ) {
   return (
@@ -141,13 +161,24 @@ function getSectionHeader(
         </Text>
       </View>
       <View>
-        <Text style={{ fontWeight: 400, color: "#cacaca", fontSize: "8px" }}>
-          {directionLabel} (
+        <Text
+          style={{
+            fontWeight: 400,
+            color: "#cacaca",
+            fontSize: "7px",
+          }}
+        >
+          {directionLabel}
+          {" / "}
+          {charSubsets.sort(sortByCategory).map((x, index) => {
+            const isLast = charSubsets.length - 1 === index;
+            return `${charSubsetsRecord[x]}${!isLast ? ", " : ""}`;
+          })}
+          {" / "}
           {categories.sort(sortByCategory).map((x, index) => {
             const isLast = categories.length - 1 === index;
             return `${syllabarySubsetsRecord[x]}${!isLast ? " - " : ""}`;
           })}
-          )
         </Text>
       </View>
     </View>

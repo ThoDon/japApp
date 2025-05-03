@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useReducer } from "react";
-import { generateGrid } from "@/lib/japanese-utils";
+import { generateExercise } from "@/lib/japanese-utils";
 import { GeneratorControls } from "./generator-controls";
 import { GeneratorPreview } from "./generator-preview";
 import { Locale } from "@/i18n/i18nConfig";
@@ -11,6 +11,7 @@ import {
   PageFormatType,
   SyllabaryType,
   SyllabarySubset,
+  CharSubset,
 } from "@/lib/types";
 import {
   generatorReducer,
@@ -28,24 +29,36 @@ export function Generator({
 }) {
   const [state, dispatch] = useReducer(generatorReducer, initialState);
 
-  const generateAndSet = useCallback(() => {
-    const newExercises = generateExercises(
-      state.pageFormat,
-      state.pageCount,
-      state.syllabaryType,
-      state.direction,
-      state.syllabarySubsets
-    );
+  const generateAndSet = useCallback(
+    ({
+      pageFormat,
+      pageCount,
+      syllabaryType,
+      direction,
+      syllabarySubsets,
+      charSubsets,
+    }: {
+      pageFormat: PageFormatType;
+      pageCount: number;
+      syllabaryType: SyllabaryType;
+      direction: DirectionType;
+      syllabarySubsets: SyllabarySubset[];
+      charSubsets: CharSubset[];
+    }) => {
+      const newExercises = generateExercises(
+        pageFormat,
+        pageCount,
+        syllabaryType,
+        direction,
+        syllabarySubsets,
+        charSubsets
+      );
 
-    dispatch({ type: "SET_EXERCISES", payload: newExercises });
-    dispatch({ type: "ADD_TO_HISTORY", payload: newExercises });
-  }, [
-    state.pageCount,
-    state.pageFormat,
-    state.syllabaryType,
-    state.direction,
-    state.syllabarySubsets,
-  ]);
+      dispatch({ type: "SET_EXERCISES", payload: newExercises });
+      dispatch({ type: "ADD_TO_HISTORY", payload: newExercises });
+    },
+    []
+  );
 
   // Load history from localStorage on component mount
   useEffect(() => {
@@ -71,15 +84,24 @@ export function Generator({
   // Generate new exercises when parameters change
   useEffect(() => {
     if (state.exercises.length > 0) {
-      generateAndSet();
+      generateAndSet({
+        pageFormat: state.pageFormat,
+        pageCount: state.pageCount,
+        syllabaryType: state.syllabaryType,
+        direction: state.direction,
+        syllabarySubsets: state.syllabarySubsets,
+        charSubsets: state.charSubsets,
+      });
     }
   }, [
-    state.syllabaryType,
-    state.direction,
-    state.pageFormat,
-    state.showCorrection,
-    state.exercises.length,
     generateAndSet,
+    state.charSubsets,
+    state.direction,
+    state.exercises.length,
+    state.pageCount,
+    state.pageFormat,
+    state.syllabarySubsets,
+    state.syllabaryType,
   ]);
 
   const loadFromHistory = (exercise: Exercise) => {
@@ -119,21 +141,24 @@ function generateExercises(
   pageCount: number,
   syllabaryType: SyllabaryType,
   direction: DirectionType,
-  syllabarySubsets: SyllabarySubset[]
+  syllabarySubsets: SyllabarySubset[],
+  charSubsets: CharSubset[]
 ): Exercise[] {
   const charactersPerPage = getCharactersPerPage(pageFormat);
 
   return Array.from({ length: pageCount }, (_, i) => {
-    const grid = generateGrid(
+    const grid = generateExercise(
       syllabaryType,
-      charactersPerPage,
-      syllabarySubsets
+      syllabarySubsets,
+      charSubsets,
+      charactersPerPage
     );
     while (grid.length < charactersPerPage) {
-      const moreChars = generateGrid(
+      const moreChars = generateExercise(
         syllabaryType,
-        charactersPerPage - grid.length,
-        syllabarySubsets
+        syllabarySubsets,
+        charSubsets,
+        charactersPerPage - grid.length
       );
       grid.push(...moreChars);
     }

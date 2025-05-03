@@ -9,6 +9,7 @@ export const initialState: GeneratorState = {
   direction: "syllabaryToRomaji",
   pageFormat: "halfPage",
   syllabarySubsets: ["gojuon", "dakuten", "handakuten", "yoon"],
+  charSubsets: ["a_ko", "sa_to", "na_ho", "ma_yo", "ra_n"],
 };
 
 export function generatorReducer(
@@ -32,6 +33,8 @@ export function generatorReducer(
       return { ...state, pageFormat: action.payload };
     case "SET_SYLLABARY_SUBSETS":
       return { ...state, syllabarySubsets: action.payload };
+    case "SET_CHAR_SUBSETS":
+      return { ...state, charSubsets: action.payload };
     case "ADD_TO_HISTORY":
       return {
         ...state,

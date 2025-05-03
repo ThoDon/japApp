@@ -2,13 +2,28 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { ExerciseGrid } from "../shared/exercise-grid";
 import { GeneratorButton } from "./generator-button";
-import { GeneratorState, GeneratorAction } from "@/lib/types";
+import {
+  GeneratorState,
+  GeneratorAction,
+  CharSubset,
+  DirectionType,
+  PageFormatType,
+  SyllabarySubset,
+  SyllabaryType,
+} from "@/lib/types";
 
 interface GeneratorPreviewProps {
   state: GeneratorState;
   dispatch: React.Dispatch<GeneratorAction>;
   d: Record<string, string>;
-  onGenerate: () => void;
+  onGenerate: (data: {
+    pageFormat: PageFormatType;
+    pageCount: number;
+    syllabaryType: SyllabaryType;
+    direction: DirectionType;
+    syllabarySubsets: SyllabarySubset[];
+    charSubsets: CharSubset[];
+  }) => void;
 }
 
 export function GeneratorPreview({
@@ -16,6 +31,24 @@ export function GeneratorPreview({
   d,
   onGenerate,
 }: GeneratorPreviewProps) {
+  const handleGenerate = () => {
+    const {
+      pageFormat,
+      pageCount,
+      syllabaryType,
+      direction,
+      syllabarySubsets,
+      charSubsets,
+    } = state;
+    onGenerate({
+      pageFormat,
+      pageCount,
+      syllabaryType,
+      direction,
+      syllabarySubsets,
+      charSubsets,
+    });
+  };
   return (
     <div className="flex flex-col justify-between gap-4">
       <div className="rounded-lg border p-4 h-full">
@@ -40,7 +73,7 @@ export function GeneratorPreview({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button onClick={onGenerate} className="w-full">
+        <Button onClick={handleGenerate} className="w-full">
           {state.exercises.length > 0 ? (
             <RefreshCw className="mr-2 h-4 w-4" />
           ) : null}
@@ -52,6 +85,7 @@ export function GeneratorPreview({
             exercises={state.exercises}
             showCorrection={state.showCorrection}
             categories={state.syllabarySubsets}
+            charSubsets={state.charSubsets}
             dictionary={d}
           />
         </div>

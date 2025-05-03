@@ -13,10 +13,14 @@ import {
   PageFormatType,
   SyllabaryType,
   SyllabarySubset,
+  CharSubset,
 } from "@/lib/types";
 import CheckboxGroup from "../shared/checkbox-group";
 import { GeneratorState, GeneratorAction } from "@/lib/types";
-import { syllabarySubsetsRecord } from "@/lib/japanese-utils";
+import {
+  charSubsetsRecord,
+  syllabarySubsetsRecord,
+} from "@/lib/japanese-utils";
 import {
   Select,
   SelectContent,
@@ -104,14 +108,28 @@ export function GeneratorControls({
       </div>
 
       <div>
+        <Label className="mb-2">{d.charSubsets}</Label>
+        <CheckboxGroup
+          values={state.charSubsets}
+          options={Object.entries(charSubsetsRecord).map(([key, value]) => ({
+            id: key,
+            label: value,
+          }))}
+          onChange={(selectedIds: string[]) => {
+            dispatch({
+              type: "SET_CHAR_SUBSETS",
+              payload: selectedIds as CharSubset[],
+            });
+          }}
+        />
+      </div>
+
+      <div>
         <Label className="mb-2">{d.category}</Label>
         <CheckboxGroup
           values={state.syllabarySubsets}
           options={Object.entries(syllabarySubsetsRecord).map(
-            ([key, value]) => ({
-              id: key,
-              label: value,
-            })
+            ([key, value]) => ({ id: key, label: value })
           )}
           onChange={(selectedIds: string[]) => {
             dispatch({

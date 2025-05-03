@@ -1,18 +1,24 @@
 import { NextRequest } from "next/server";
 import { PDFDocument } from "@/components/features/japanese/pdf/PdfDocument";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { Exercise, SyllabarySubset } from "../../../../lib/types";
+import type { Exercise, SyllabarySubset, CharSubset } from "@/lib/types";
 
 interface GeneratePdfBody {
   exercises: Exercise[];
   showCorrection: boolean;
   dictionary: Record<string, string>;
   categories: SyllabarySubset[];
+  charSubsets: CharSubset[];
 }
 
 export async function POST(req: NextRequest) {
-  const { exercises, showCorrection, dictionary, categories }: GeneratePdfBody =
-    await req.json();
+  const {
+    exercises,
+    showCorrection,
+    dictionary,
+    categories,
+    charSubsets,
+  }: GeneratePdfBody = await req.json();
 
   const stream = await renderToBuffer(
     <PDFDocument
@@ -20,6 +26,7 @@ export async function POST(req: NextRequest) {
       showCorrection={showCorrection}
       dictionary={dictionary}
       categories={categories}
+      charSubsets={charSubsets}
     />
   );
 
