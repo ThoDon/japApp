@@ -250,6 +250,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     padding: 16,
     lineHeight: 1.6,
+    position: 'relative',
+  },
+  coverPage: {
+    color: "#000",
+    fontFamily: "Noto Sans JP",
+    fontWeight: 400,
+    fontSize: 12,
+    padding: 16,
+    lineHeight: 1.6,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+  },
+  coverTitle: {
+    fontSize: 48,
+    fontWeight: 700,
+    color: "#e7000b",
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  coverSubtitle: {
+    fontSize: 24,
+    fontWeight: 400,
+    marginBottom: 40,
+    textAlign: 'center',
+  },
+  coverInfo: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#666',
+  },
+  pageNumber: {
+    position: 'absolute',
+    bottom: 12,
+    fontSize: 10,
+    color: '#666',
+  },
+  pageNumberLeft: {
+    left: 16,
+  },
+  pageNumberRight: {
+    right: 16,
   },
   header: {
     fontSize: 12,
@@ -364,59 +408,171 @@ function getSectionHeader(dictionary, pageLabel, directionLabel, categories, cha
   );
 }
 
-function PDFDocument({ exercises, showCorrection, dictionary, categories, charSubsets }) {
-  return React.createElement(Document, null,
-    exercises.map(({ direction, type, grid, pageFormat }, index) => {
+function PDFDocument({ exerciseTypes, includeCoverPage, dictionary }) {
+  let currentPageNumber = 1;
+  const pages = [];
+
+  // Add cover page if requested
+  if (includeCoverPage) {
+    pages.push(
+      React.createElement(Page, { 
+        size: "A4", 
+        style: styles.coverPage, 
+        key: "cover" 
+      },
+        React.createElement(Text, { style: styles.coverTitle }, "Kana'Sheet"),
+        React.createElement(Text, { style: styles.coverSubtitle }, "Japanese Writing Practice"),
+        React.createElement(Text, { style: styles.coverInfo }, 
+          `Exercise Book - ${new Date().toLocaleDateString()}`
+        )
+      )
+    );
+    currentPageNumber++;
+  }
+
+  // Generate exercises for each exercise type
+  exerciseTypes.forEach((exerciseType, typeIndex) => {
+    const { syllabaryType, direction, pageFormat, pageCount, showCorrection, syllabarySubsets, charSubsets } = exerciseType;
+    
+    // Calculate characters per page based on format
+    const charactersPerPage = getCharactersPerPage(pageFormat);
+    
+    const exercises = generateExercises(
+      syllabaryType,
+      syllabarySubsets,
+      charSubsets,
+      charactersPerPage * pageCount,
+      pageCount
+    );
+
+    exercises.forEach((grid, exerciseIndex) => {
       const isSyllabaryToRomaji = direction === "syllabaryToRomaji";
       const directionLabel = isSyllabaryToRomaji
-        ? `${dictionary[type]} → ${dictionary.romaji}`
-        : `${dictionary.romaji} → ${dictionary[type]}`;
-      const pageLabel = exercises.length > 1 ? ` ${index + 1}` : "";
+        ? `${dictionary[syllabaryType]} → ${dictionary.romaji}`
+        : `${dictionary.romaji} → ${dictionary[syllabaryType]}`;
+      
+      const pageLabel = exercises.length > 1 ? ` ${exerciseIndex + 1}` : "";
+      const isOddPage = currentPageNumber % 2 === 1;
+      const pageNumberStyle = isOddPage ? styles.pageNumberRight : styles.pageNumberLeft;
 
-      return React.createElement(Page, { size: "A4", style: styles.page, key: index },
-        getSectionHeader(dictionary, pageLabel, directionLabel, categories, charSubsets),
-        React.createElement(View, { style: styles.grid },
-          grid.map((item, idx) => {
-            const char = isSyllabaryToRomaji ? item.char : item.romaji;
-            return React.createElement(View, { key: idx, style: styles.cell },
-              React.createElement(Text, {
-                style: isSyllabaryToRomaji ? styles.characterJP : styles.characterLatin
-              }, char),
-              React.createElement(View, { style: styles.writingBox })
-            );
-          })
-        ),
-        showCorrection && React.createElement(View, { break: pageFormat === "fullPage" ? true : false },
-          getSectionHeader(dictionary, pageLabel, directionLabel, categories, charSubsets, true),
+      // Exercise page
+      pages.push(
+        React.createElement(Page, { 
+          size: "A4", 
+          style: styles.page, 
+          key: `exercise-${typeIndex}-${exerciseIndex}` 
+        },
+          getSectionHeader(dictionary, pageLabel, directionLabel, syllabarySubsets, charSubsets),
+          React.createElement(View, { style: styles.grid },
+            grid.map((item, idx) => {
+              const char = isSyllabaryToRomaji ? item.char : item.romaji;
+              return React.createElement(View, { key: idx, style: styles.cell },
+                React.createElement(Text, {
+                  style: isSyllabaryToRomaji ? styles.characterJP : styles.characterLatin
+                }, char),
+                React.createElement(View, { style: styles.writingBox })
+              );
+            })
+          ),
+          React.createElement(Text, { 
+            style: [styles.pageNumber, pageNumberStyle] 
+          }, currentPageNumber.toString())
+        )
+      );
+      currentPageNumber++;
+
+      // Correction page (if enabled and format is fullPage)
+      if (showCorrection && pageFormat === "fullPage") {
+        const isOddPage = currentPageNumber % 2 === 1;
+        const pageNumberStyle = isOddPage ? styles.pageNumberRight : styles.pageNumberLeft;
+        
+        pages.push(
+          React.createElement(Page, { 
+            size: "A4", 
+            style: styles.page, 
+            key: `correction-${typeIndex}-${exerciseIndex}` 
+          },
+            getSectionHeader(dictionary, pageLabel, directionLabel, syllabarySubsets, charSubsets, true),
+            React.createElement(View, { style: styles.grid },
+              grid.map((item, idx) => {
+                const correction = isSyllabaryToRomaji ? item.romaji : item.char;
+                const char = isSyllabaryToRomaji ? item.char : item.romaji;
+                return React.createElement(View, { key: idx, style: styles.cell },
+                  React.createElement(Text, {
+                    style: isSyllabaryToRomaji ? styles.characterJP : styles.characterLatin
+                  }, char),
+                  React.createElement(View, { style: styles.correctionBox },
+                    React.createElement(Text, { style: styles.correctionCharacter }, correction)
+                  )
+                );
+              })
+            ),
+            React.createElement(Text, { 
+              style: [styles.pageNumber, pageNumberStyle] 
+            }, currentPageNumber.toString())
+          )
+        );
+        currentPageNumber++;
+      } else if (showCorrection && pageFormat === "halfPage") {
+        // For half-page format, add correction section on the same page without break
+        const correctionSection = React.createElement(View, null,
+          getSectionHeader(dictionary, pageLabel, directionLabel, syllabarySubsets, charSubsets, true),
           React.createElement(View, { style: styles.grid },
             grid.map((item, idx) => {
               const correction = isSyllabaryToRomaji ? item.romaji : item.char;
-              const char = isSyllabaryToRomaji ? item.char : item.romaji;
               return React.createElement(View, { key: idx, style: styles.cell },
-                pageFormat === "fullPage" && React.createElement(Text, {
-                  style: isSyllabaryToRomaji ? styles.characterJP : styles.characterLatin
-                }, char),
                 React.createElement(View, { style: styles.correctionBox },
                   React.createElement(Text, { style: styles.correctionCharacter }, correction)
                 )
               );
             })
           )
-        )
-      );
-    })
-  );
+        );
+        
+        // Replace the last page with the updated version including correction
+        pages[pages.length - 1] = React.createElement(Page, { 
+          size: "A4", 
+          style: styles.page, 
+          key: `exercise-${typeIndex}-${exerciseIndex}` 
+        },
+          getSectionHeader(dictionary, pageLabel, directionLabel, syllabarySubsets, charSubsets),
+          React.createElement(View, { style: styles.grid },
+            grid.map((item, idx) => {
+              const char = isSyllabaryToRomaji ? item.char : item.romaji;
+              return React.createElement(View, { key: idx, style: styles.cell },
+                React.createElement(Text, {
+                  style: isSyllabaryToRomaji ? styles.characterJP : styles.characterLatin
+                }, char),
+                React.createElement(View, { style: styles.writingBox })
+              );
+            })
+          ),
+          correctionSection,
+          React.createElement(Text, { 
+            style: [styles.pageNumber, pageNumberStyle] 
+          }, (currentPageNumber - 1).toString())
+        );
+      }
+    });
+  });
+
+  return React.createElement(Document, null, ...pages);
 }
 
 // Configuration
 const config = {
-  syllabaryType: 'hiragana',
-  direction: 'syllabaryToRomaji',
-  pageFormat: 'halfPage',
-  pageCount: 1,
-  showCorrection: true,
-  syllabarySubsets: ['gojuon', 'dakuten', 'handakuten', 'yoon'], // All subsets by default
-  charSubsets: ['a_ko', 'sa_to', 'na_ho', 'ma_yo', 'ra_n'], // All character ranges by default
+  exerciseTypes: [
+    {
+      syllabaryType: 'hiragana',
+      direction: 'syllabaryToRomaji',
+      pageFormat: 'halfPage',
+      pageCount: 1,
+      showCorrection: true,
+      syllabarySubsets: ['gojuon', 'dakuten', 'handakuten', 'yoon'],
+      charSubsets: ['a_ko', 'sa_to', 'na_ho', 'ma_yo', 'ra_n']
+    }
+  ],
+  includeCoverPage: true,
   outputPath: './output/kana-exercises.pdf',
   dictionary: {
     hiragana: 'Hiragana',
@@ -441,42 +597,25 @@ async function generatePDF() {
   try {
     console.log('🚀 Starting PDF generation...');
     
-    // Calculate characters per page based on format
-    const charactersPerPage = getCharactersPerPage(config.pageFormat);
-    
-    const configWithChars = {
-      ...config,
-      charactersPerPage
-    };
-    
-    console.log('📋 Configuration:', JSON.stringify(configWithChars, null, 2));
+    console.log('📋 Configuration:', JSON.stringify(config, null, 2));
 
-    const exercises = generateExercises(
-      config.syllabaryType,
-      config.syllabarySubsets,
-      config.charSubsets,
-      charactersPerPage * config.pageCount,
-      config.pageCount
-    );
+    // Calculate total pages for logging
+    let totalPages = config.includeCoverPage ? 1 : 0;
+    config.exerciseTypes.forEach(exerciseType => {
+      const { pageFormat, pageCount, showCorrection } = exerciseType;
+      totalPages += pageCount;
+      if (showCorrection && pageFormat === "fullPage") {
+        totalPages += pageCount;
+      }
+    });
 
-    const exerciseObjects = exercises.map((grid, index) => ({
-      id: `exercise-${index + 1}`,
-      type: config.syllabaryType,
-      direction: config.direction,
-      pageFormat: config.pageFormat,
-      grid: grid,
-      timestamp: Date.now()
-    }));
-
-    console.log(`📝 Generated ${exerciseObjects.length} exercises`);
+    console.log(`📝 Generating ${config.exerciseTypes.length} exercise type(s) with ${totalPages} total pages`);
 
     const pdfBuffer = await renderToBuffer(
       React.createElement(PDFDocument, {
-        exercises: exerciseObjects,
-        showCorrection: config.showCorrection,
-        dictionary: config.dictionary,
-        categories: config.syllabarySubsets,
-        charSubsets: config.charSubsets
+        exerciseTypes: config.exerciseTypes,
+        includeCoverPage: config.includeCoverPage,
+        dictionary: config.dictionary
       })
     );
 
@@ -490,6 +629,7 @@ async function generatePDF() {
     console.log(`✅ PDF generated successfully!`);
     console.log(`📁 Output: ${path.resolve(config.outputPath)}`);
     console.log(`📊 File size: ${(pdfBuffer.length / 1024).toFixed(2)} KB`);
+    console.log(`📄 Total pages: ${totalPages}`);
 
   } catch (error) {
     console.error('❌ Error generating PDF:', error);
@@ -509,138 +649,174 @@ async function promptForParameters() {
   console.log('📝 Interactive PDF Generator Setup\n');
 
   try {
-    // Syllabary type selection
-    console.log('Choose syllabary type:');
-    console.log('  1. Hiragana (ひらがな)');
-    console.log('  2. Katakana (カタカナ)');
-    const syllabaryChoice = await question('Enter choice (1-2) [1]: ') || '1';
-    const syllabaryType = syllabaryChoice === '2' ? 'katakana' : 'hiragana';
-    console.log(`✅ Selected: ${syllabaryType}\n`);
-    
-    // Direction selection
-    console.log('Choose exercise direction:');
-    console.log('  1. Syllabary → Romaji (write romaji for kana)');
-    console.log('  2. Romaji → Syllabary (write kana for romaji)');
-    const directionChoice = await question('Enter choice (1-2) [1]: ') || '1';
-    const direction = directionChoice === '2' ? 'romajiToSyllabary' : 'syllabaryToRomaji';
-    console.log(`✅ Selected: ${direction}\n`);
-    
-    // Number of pages
-    const pageCount = parseInt(await question('Number of pages [1]: ') || '1');
-    console.log(`✅ Selected: ${pageCount} page(s)\n`);
-    
-    // Page format selection
-    console.log('Choose page format:');
-    console.log('  1. Half page (exercise and correction on same page)');
-    console.log('  2. Full page (exercise and correction on separate pages)');
-    const formatChoice = await question('Enter choice (1-2) [1]: ') || '1';
-    const pageFormat = formatChoice === '2' ? 'fullPage' : 'halfPage';
-    console.log(`✅ Selected: ${pageFormat === 'fullPage' ? 'Full page' : 'Half page'}\n`);
-    
-    // Show correction
-    console.log('Include correction section?');
-    console.log('  1. Yes (show answers)');
-    console.log('  2. No (practice only)');
-    const correctionChoice = await question('Enter choice (1-2) [1]: ') || '1';
-    const showCorrection = correctionChoice === '1';
-    console.log(`✅ Selected: ${showCorrection ? 'Yes' : 'No'}\n`);
-    
-    // Syllabary subsets selection
-    console.log('Choose syllabary subsets:');
-    console.log('  1. Gojūon (basic 46 characters)');
-    console.log('  2. Dakuten (voiced consonants: が, ざ, だ, ば)');
-    console.log('  3. Handakuten (semi-voiced: ぱ, ぴ, ぷ, ぺ, ぽ)');
-    console.log('  4. Yōon (contracted sounds: きゃ, しゃ, ちゃ)');
-    console.log('  5. All subsets');
-    console.log('  6. Custom selection');
-    
-    const subsetsChoice = await question('Enter choice (1-6) [5]: ') || '5';
-    let syllabarySubsets;
-    
-    if (subsetsChoice === '5') {
-      syllabarySubsets = ['gojuon', 'dakuten', 'handakuten', 'yoon'];
-      console.log('✅ Selected: All subsets');
-    } else if (subsetsChoice === '6') {
-      console.log('\nEnter custom subsets (comma-separated):');
-      console.log('Available: gojuon, dakuten, handakuten, yoon');
-      const customSubsets = await question('Subsets [gojuon]: ') || 'gojuon';
-      syllabarySubsets = customSubsets.split(',').map(s => s.trim());
-      console.log(`✅ Selected: ${syllabarySubsets.join(', ')}`);
+    // Cover page selection
+    console.log('Include cover page?');
+    console.log('  1. Yes (recommended for exercise books)');
+    console.log('  2. No (start directly with exercises)');
+    const coverChoice = await question('Enter choice (1-2) [1]: ') || '1';
+    const includeCoverPage = coverChoice === '1';
+    console.log(`✅ Selected: ${includeCoverPage ? 'Yes' : 'No'}\n`);
+
+    // Number of exercise types
+    console.log('How many different exercise types do you want?');
+    console.log('  1. Single exercise type (traditional)');
+    console.log('  2. Multiple exercise types (exercise book)');
+    const typesChoice = await question('Enter choice (1-2) [1]: ') || '1';
+    const multipleTypes = typesChoice === '2';
+    console.log(`✅ Selected: ${multipleTypes ? 'Multiple types' : 'Single type'}\n`);
+
+    const exerciseTypes = [];
+
+    if (multipleTypes) {
+      const numTypes = parseInt(await question('How many exercise types? [2]: ') || '2');
+      console.log(`✅ Will create ${numTypes} exercise types\n`);
+
+      for (let i = 0; i < numTypes; i++) {
+        console.log(`\n📝 Exercise Type ${i + 1}:`);
+        const exerciseType = await promptForSingleExerciseType(question, i + 1);
+        exerciseTypes.push(exerciseType);
+      }
     } else {
-      const subsetMap = {
-        '1': ['gojuon'],
-        '2': ['dakuten'],
-        '3': ['handakuten'],
-        '4': ['yoon']
-      };
-      syllabarySubsets = subsetMap[subsetsChoice] || ['gojuon'];
-      console.log(`✅ Selected: ${syllabarySubsets.join(', ')}`);
+      console.log('\n📝 Single Exercise Type:');
+      const exerciseType = await promptForSingleExerciseType(question, 1);
+      exerciseTypes.push(exerciseType);
     }
-    console.log();
-    
-    // Character subsets selection
-    console.log('Choose character ranges:');
-    console.log('  1. a-ko (あ, い, う, え, お, か, き, く, け, こ)');
-    console.log('  2. sa-to (さ, し, す, せ, そ, た, ち, つ, て, と)');
-    console.log('  3. na-ho (な, に, ぬ, ね, の, は, ひ, ふ, へ, ほ)');
-    console.log('  4. ma-yo (ま, み, む, め, も, や, ゆ, よ)');
-    console.log('  5. ra-n (ら, り, る, れ, ろ, わ, を, ん)');
-    console.log('  6. All ranges');
-    console.log('  7. Custom selection');
-    
-    const charsChoice = await question('Enter choice (1-7) [6]: ') || '6';
-    let charSubsets;
-    
-    if (charsChoice === '6') {
-      charSubsets = ['a_ko', 'sa_to', 'na_ho', 'ma_yo', 'ra_n'];
-      console.log('✅ Selected: All character ranges');
-    } else if (charsChoice === '7') {
-      console.log('\nEnter custom character ranges (comma-separated):');
-      console.log('Available: a_ko, sa_to, na_ho, ma_yo, ra_n');
-      const customChars = await question('Ranges [a_ko,sa_to]: ') || 'a_ko,sa_to';
-      charSubsets = customChars.split(',').map(s => s.trim());
-      console.log(`✅ Selected: ${charSubsets.join(', ')}`);
-    } else {
-      const charMap = {
-        '1': ['a_ko'],
-        '2': ['sa_to'],
-        '3': ['na_ho'],
-        '4': ['ma_yo'],
-        '5': ['ra_n']
-      };
-      charSubsets = charMap[charsChoice] || ['a_ko', 'sa_to'];
-      console.log(`✅ Selected: ${charSubsets.join(', ')}`);
-    }
-    console.log();
     
     // Output path
-    const outputPath = await question('Output file path [./output/kana-exercises.pdf]: ') || './output/kana-exercises.pdf';
+    const outputPath = await question('\nOutput file path [./output/kana-exercises.pdf]: ') || './output/kana-exercises.pdf';
     console.log(`✅ Selected: ${outputPath}`);
 
     console.log('\n🎯 Configuration Summary:');
-    console.log(`   • Type: ${syllabaryType}`);
-    console.log(`   • Direction: ${direction}`);
-    console.log(`   • Format: ${pageFormat === 'fullPage' ? 'Full page' : 'Half page'}`);
-    console.log(`   • Pages: ${pageCount}`);
-    console.log(`   • Correction: ${showCorrection ? 'Yes' : 'No'}`);
-    console.log(`   • Subsets: ${syllabarySubsets.join(', ')}`);
-    console.log(`   • Characters: ${charSubsets.join(', ')}`);
+    console.log(`   • Cover page: ${includeCoverPage ? 'Yes' : 'No'}`);
+    console.log(`   • Exercise types: ${exerciseTypes.length}`);
+    exerciseTypes.forEach((type, index) => {
+      console.log(`   • Type ${index + 1}: ${type.syllabaryType} ${type.direction} (${type.pageCount} pages, ${type.pageFormat})`);
+    });
     console.log(`   • Output: ${outputPath}`);
     console.log('\n✅ Configuration complete!');
 
     return {
-      syllabaryType,
-      direction,
-      pageFormat,
-      pageCount,
-      showCorrection,
-      syllabarySubsets,
-      charSubsets,
+      exerciseTypes,
+      includeCoverPage,
       outputPath
     };
   } finally {
     rl.close();
   }
+}
+
+async function promptForSingleExerciseType(question, typeNumber) {
+  // Syllabary type selection
+  console.log(`Choose syllabary type for exercise ${typeNumber}:`);
+  console.log('  1. Hiragana (ひらがな)');
+  console.log('  2. Katakana (カタカナ)');
+  const syllabaryChoice = await question('Enter choice (1-2) [1]: ') || '1';
+  const syllabaryType = syllabaryChoice === '2' ? 'katakana' : 'hiragana';
+  console.log(`✅ Selected: ${syllabaryType}`);
+  
+  // Direction selection
+  console.log(`Choose exercise direction for exercise ${typeNumber}:`);
+  console.log('  1. Syllabary → Romaji (write romaji for kana)');
+  console.log('  2. Romaji → Syllabary (write kana for romaji)');
+  const directionChoice = await question('Enter choice (1-2) [1]: ') || '1';
+  const direction = directionChoice === '2' ? 'romajiToSyllabary' : 'syllabaryToRomaji';
+  console.log(`✅ Selected: ${direction}`);
+  
+  // Number of pages
+  const pageCount = parseInt(await question(`Number of pages for exercise ${typeNumber} [1]: `) || '1');
+  console.log(`✅ Selected: ${pageCount} page(s)`);
+  
+  // Page format selection
+  console.log(`Choose page format for exercise ${typeNumber}:`);
+  console.log('  1. Half page (exercise and correction on same page)');
+  console.log('  2. Full page (exercise and correction on separate pages)');
+  const formatChoice = await question('Enter choice (1-2) [1]: ') || '1';
+  const pageFormat = formatChoice === '2' ? 'fullPage' : 'halfPage';
+  console.log(`✅ Selected: ${pageFormat === 'fullPage' ? 'Full page' : 'Half page'}`);
+  
+  // Show correction
+  console.log(`Include correction section for exercise ${typeNumber}?`);
+  console.log('  1. Yes (show answers)');
+  console.log('  2. No (practice only)');
+  const correctionChoice = await question('Enter choice (1-2) [1]: ') || '1';
+  const showCorrection = correctionChoice === '1';
+  console.log(`✅ Selected: ${showCorrection ? 'Yes' : 'No'}`);
+  
+  // Syllabary subsets selection
+  console.log(`Choose syllabary subsets for exercise ${typeNumber}:`);
+  console.log('  1. Gojūon (basic 46 characters)');
+  console.log('  2. Dakuten (voiced consonants: が, ざ, だ, ば)');
+  console.log('  3. Handakuten (semi-voiced: ぱ, ぴ, ぷ, ぺ, ぽ)');
+  console.log('  4. Yōon (contracted sounds: きゃ, しゃ, ちゃ)');
+  console.log('  5. All subsets');
+  console.log('  6. Custom selection');
+  
+  const subsetsChoice = await question('Enter choice (1-6) [5]: ') || '5';
+  let syllabarySubsets;
+  
+  if (subsetsChoice === '5') {
+    syllabarySubsets = ['gojuon', 'dakuten', 'handakuten', 'yoon'];
+    console.log('✅ Selected: All subsets');
+  } else if (subsetsChoice === '6') {
+    console.log('\nEnter custom subsets (comma-separated):');
+    console.log('Available: gojuon, dakuten, handakuten, yoon');
+    const customSubsets = await question('Subsets [gojuon]: ') || 'gojuon';
+    syllabarySubsets = customSubsets.split(',').map(s => s.trim());
+    console.log(`✅ Selected: ${syllabarySubsets.join(', ')}`);
+  } else {
+    const subsetMap = {
+      '1': ['gojuon'],
+      '2': ['dakuten'],
+      '3': ['handakuten'],
+      '4': ['yoon']
+    };
+    syllabarySubsets = subsetMap[subsetsChoice] || ['gojuon'];
+    console.log(`✅ Selected: ${syllabarySubsets.join(', ')}`);
+  }
+  
+  // Character subsets selection
+  console.log(`Choose character ranges for exercise ${typeNumber}:`);
+  console.log('  1. a-ko (あ, い, う, え, お, か, き, く, け, こ)');
+  console.log('  2. sa-to (さ, し, す, せ, そ, た, ち, つ, て, と)');
+  console.log('  3. na-ho (な, に, ぬ, ね, の, は, ひ, ふ, へ, ほ)');
+  console.log('  4. ma-yo (ま, み, む, め, も, や, ゆ, よ)');
+  console.log('  5. ra-n (ら, り, る, れ, ろ, わ, を, ん)');
+  console.log('  6. All ranges');
+  console.log('  7. Custom selection');
+  
+  const charsChoice = await question('Enter choice (1-7) [6]: ') || '6';
+  let charSubsets;
+  
+  if (charsChoice === '6') {
+    charSubsets = ['a_ko', 'sa_to', 'na_ho', 'ma_yo', 'ra_n'];
+    console.log('✅ Selected: All character ranges');
+  } else if (charsChoice === '7') {
+    console.log('\nEnter custom character ranges (comma-separated):');
+    console.log('Available: a_ko, sa_to, na_ho, ma_yo, ra_n');
+    const customChars = await question('Ranges [a_ko,sa_to]: ') || 'a_ko,sa_to';
+    charSubsets = customChars.split(',').map(s => s.trim());
+    console.log(`✅ Selected: ${charSubsets.join(', ')}`);
+  } else {
+    const charMap = {
+      '1': ['a_ko'],
+      '2': ['sa_to'],
+      '3': ['na_ho'],
+      '4': ['ma_yo'],
+      '5': ['ra_n']
+    };
+    charSubsets = charMap[charsChoice] || ['a_ko', 'sa_to'];
+    console.log(`✅ Selected: ${charSubsets.join(', ')}`);
+  }
+
+  return {
+    syllabaryType,
+    direction,
+    pageFormat,
+    pageCount,
+    showCorrection,
+    syllabarySubsets,
+    charSubsets
+  };
 }
 
 // Command line argument parsing
@@ -652,34 +828,49 @@ function parseArgs() {
     return null;
   }
   
+  // Reset config to default
+  config.exerciseTypes = [{
+    syllabaryType: 'hiragana',
+    direction: 'syllabaryToRomaji',
+    pageFormat: 'halfPage',
+    pageCount: 1,
+    showCorrection: true,
+    syllabarySubsets: ['gojuon', 'dakuten', 'handakuten', 'yoon'],
+    charSubsets: ['a_ko', 'sa_to', 'na_ho', 'ma_yo', 'ra_n']
+  }];
+  config.includeCoverPage = true;
+  
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--type':
       case '-t':
-        config.syllabaryType = args[++i];
+        config.exerciseTypes[0].syllabaryType = args[++i];
         break;
       case '--direction':
       case '-d':
-        config.direction = args[++i];
+        config.exerciseTypes[0].direction = args[++i];
         break;
       case '--pages':
       case '-p':
-        config.pageCount = parseInt(args[++i]);
+        config.exerciseTypes[0].pageCount = parseInt(args[++i]);
         break;
       case '--format':
       case '-f':
-        config.pageFormat = args[++i];
+        config.exerciseTypes[0].pageFormat = args[++i];
         break;
       case '--correction':
       case '-c':
-        config.showCorrection = args[++i] === 'true';
+        config.exerciseTypes[0].showCorrection = args[++i] === 'true';
         break;
       case '--subsets':
       case '-s':
-        config.syllabarySubsets = args[++i].split(',');
+        config.exerciseTypes[0].syllabarySubsets = args[++i].split(',');
         break;
       case '--chars':
-        config.charSubsets = args[++i].split(',');
+        config.exerciseTypes[0].charSubsets = args[++i].split(',');
+        break;
+      case '--cover':
+        config.includeCoverPage = args[++i] === 'true';
         break;
       case '--output':
       case '-o':
@@ -710,6 +901,7 @@ Options:
   -c, --correction <bool>     Show correction section (true/false)
   -s, --subsets <list>        Syllabary subsets (gojuon,dakuten,handakuten,yoon)
   --chars <list>              Character subsets (a_ko,sa_to,na_ho,ma_yo,ra_n)
+  --cover <bool>              Include cover page (true/false)
   -o, --output <path>         Output file path
   -h, --help                  Show this help message
 
@@ -717,6 +909,11 @@ Examples:
   node scripts/generate-pdf-standalone.js --type hiragana --pages 2 --correction true
   node scripts/generate-pdf-standalone.js -t katakana -p 1 -s gojuon,dakuten -o ./my-exercises.pdf
   node scripts/generate-pdf-standalone.js --type hiragana --subsets gojuon,yoon --chars a_ko,sa_to
+  node scripts/generate-pdf-standalone.js --cover false --type hiragana --pages 3
+
+Interactive Mode:
+  Run without arguments to use interactive mode with support for multiple exercise types
+  and exercise book generation with proper page numbering.
 
 Default configuration:
   Type: hiragana
@@ -724,6 +921,7 @@ Default configuration:
   Format: halfPage
   Pages: 1
   Correction: true
+  Cover page: true
   Subsets: gojuon,dakuten,handakuten,yoon (all subsets)
   Characters: a_ko,sa_to,na_ho,ma_yo,ra_n (all ranges)
   Output: ./output/kana-exercises.pdf
@@ -739,13 +937,8 @@ async function main() {
     const params = await promptForParameters();
     
     // Update config with user input
-    config.syllabaryType = params.syllabaryType;
-    config.direction = params.direction;
-    config.pageFormat = params.pageFormat;
-    config.pageCount = params.pageCount;
-    config.showCorrection = params.showCorrection;
-    config.syllabarySubsets = params.syllabarySubsets;
-    config.charSubsets = params.charSubsets;
+    config.exerciseTypes = params.exerciseTypes;
+    config.includeCoverPage = params.includeCoverPage;
     config.outputPath = params.outputPath;
     
     console.log('\n🚀 Starting PDF generation with your settings...\n');
